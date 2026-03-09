@@ -116,11 +116,11 @@ export default function ContactPage() {
       <section className="border-b border-border">
         <div className="max-w-6xl mx-auto px-6 py-20">
           <div className="max-w-xl">
-            <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-4">Contact</p>
-            <h1 className="text-4xl font-semibold tracking-tight leading-tight mb-5">
+            <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-4">Contact</p>
+            <h1 className="text-5xl font-semibold tracking-tight leading-tight mb-5">
               Let's talk.
             </h1>
-            <p className="text-sm text-muted-foreground leading-7">
+            <p className="text-base text-muted-foreground leading-7">
               Have a question, idea, or just want to say hi? Use the form below or reach us
               directly on any of our social channels. We read every message.
             </p>
@@ -136,51 +136,51 @@ export default function ContactPage() {
           <div className="flex flex-col gap-6">
             <div>
               <h2 className="text-lg font-semibold tracking-tight mb-1">Send a message</h2>
-              <p className="text-xs text-muted-foreground">We typically respond within 1–2 business days.</p>
+              <p className="text-sm text-muted-foreground">We typically respond within 1–2 business days.</p>
             </div>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
               <div className="grid sm:grid-cols-2 gap-4">
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">Name</span>
+                  <span className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Name</span>
                   <Input
                     name="name"
                     placeholder="Your name"
                     value={form.name}
                     onChange={handleChange}
-                    className="h-9 text-xs"
+                    className="h-9 text-sm"
                   />
                 </label>
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">Email</span>
+                  <span className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Email</span>
                   <Input
                     name="email"
                     type="email"
                     placeholder="your@email.com"
                     value={form.email}
                     onChange={handleChange}
-                    className="h-9 text-xs"
+                    className="h-9 text-sm"
                   />
                 </label>
               </div>
               <label className="flex flex-col gap-1.5">
-                <span className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">Subject <span className="normal-case tracking-normal font-normal text-muted-foreground/60">(optional)</span></span>
+                <span className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Subject <span className="normal-case tracking-normal font-normal text-muted-foreground/60">(optional)</span></span>
                 <Input
                   name="subject"
                   placeholder="What's this about?"
                   value={form.subject}
                   onChange={handleChange}
-                  className="h-9 text-xs"
+                  className="h-9 text-sm"
                 />
               </label>
               <label className="flex flex-col gap-1.5">
-                <span className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">Message</span>
+                <span className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Message</span>
                 <textarea
                   name="message"
                   placeholder="Write your message here..."
                   value={form.message}
                   onChange={handleChange}
                   rows={7}
-                  className="border-input bg-background placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex w-full min-w-0 rounded-none border px-3 py-2 text-xs shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-1 resize-none leading-6"
+                  className="border-input bg-background placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex w-full min-w-0 rounded-none border px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-1 resize-none leading-6"
                 />
               </label>
               <div className="pt-1">
@@ -199,17 +199,17 @@ export default function ContactPage() {
               <CardHeader className="py-0 gap-2 mb-4">
                 <div className="flex items-center gap-2 text-foreground">
                   <EnvelopeSimple size={16} weight="bold" />
-                  <CardTitle className="text-sm">Direct email</CardTitle>
+                  <CardTitle className="text-base">Direct email</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
                 <a
                   href="mailto:fahad.wp@gmail.com"
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4"
                 >
                   fahad.wp@gmail.com
                 </a>
-                <CardDescription className="text-[11px] mt-2 leading-5">
+                <CardDescription className="text-xs mt-2 leading-5">
                   For partnership, press, or time-sensitive matters.
                 </CardDescription>
               </CardContent>
@@ -218,7 +218,7 @@ export default function ContactPage() {
             {/* Socials */}
             <Card className="py-5 gap-0">
               <CardHeader className="py-0 gap-2 mb-4">
-                <CardTitle className="text-sm">Find us online</CardTitle>
+                <CardTitle className="text-base">Find us online</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col gap-3">
@@ -232,8 +232,8 @@ export default function ContactPage() {
                     >
                       <span className="shrink-0">{s.icon}</span>
                       <div className="flex flex-col">
-                        <span className="text-[10px] uppercase tracking-widest text-muted-foreground/60 leading-none mb-0.5">{s.label}</span>
-                        <span className="text-xs group-hover:underline underline-offset-4">{s.value}</span>
+                        <span className="text-xs uppercase tracking-widest text-muted-foreground/60 leading-none mb-0.5">{s.label}</span>
+                        <span className="text-sm group-hover:underline underline-offset-4">{s.value}</span>
                       </div>
                     </a>
                   ))}
@@ -249,7 +249,7 @@ export default function ContactPage() {
         <div className="max-w-6xl mx-auto px-6 py-20">
           <div className="mb-10">
             <h2 className="text-xl font-semibold tracking-tight mb-2">What are you reaching out about?</h2>
-            <p className="text-xs text-muted-foreground">All messages welcome — these are just common ones.</p>
+            <p className="text-sm text-muted-foreground">All messages welcome — these are just common ones.</p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {reasons.map((r) => (
@@ -258,13 +258,13 @@ export default function ContactPage() {
                   <div className="flex items-center justify-between">
                     <div className="text-foreground">{r.icon}</div>
                     {r.badge && (
-                      <Badge variant="secondary" className="text-[10px] font-normal">{r.badge}</Badge>
+                      <Badge variant="secondary" className="text-xs font-normal">{r.badge}</Badge>
                     )}
                   </div>
-                  <CardTitle className="text-sm">{r.title}</CardTitle>
+                  <CardTitle className="text-base">{r.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription className="text-xs leading-6">{r.description}</CardDescription>
+                  <CardDescription className="text-sm leading-6">{r.description}</CardDescription>
                 </CardContent>
               </Card>
             ))}

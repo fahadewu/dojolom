@@ -21,13 +21,13 @@ export function Navbar() {
   return (
     <header className="border-b border-border sticky top-0 z-50 bg-white/95 backdrop-blur-sm">
       <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 font-semibold text-sm tracking-tight">
+        <Link href="/" className="flex items-center gap-2 font-semibold text-base tracking-tight">
           <Terminal size={18} weight="bold" />
           Dojo LoM
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-6 text-xs text-muted-foreground">
+        <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -74,7 +74,7 @@ export function Navbar() {
               href={link.href}
               onClick={() => setOpen(false)}
               className={cn(
-                "text-sm text-muted-foreground hover:text-foreground transition-colors",
+                "text-base text-muted-foreground hover:text-foreground transition-colors",
                 pathname === link.href && "text-foreground font-medium"
               )}
             >

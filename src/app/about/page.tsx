@@ -87,11 +87,11 @@ export default function AboutPage() {
       <section className="border-b border-border">
         <div className="max-w-6xl mx-auto px-6 py-20">
           <div className="max-w-2xl">
-            <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-4">About Dojo LoM</p>
-            <h1 className="text-4xl font-semibold tracking-tight leading-tight mb-5">
+            <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-4">About Dojo LoM</p>
+            <h1 className="text-5xl font-semibold tracking-tight leading-tight mb-5">
               Built because the<br />right thing didn't exist.
             </h1>
-            <p className="text-sm text-muted-foreground leading-7">
+            <p className="text-base text-muted-foreground leading-7">
               Dojo LoM was born out of a simple frustration: every programming platform either
               holds your hand until you can't think for yourself, or throws you in the deep end
               with no direction. We're building the middle path — structured, honest,
@@ -112,7 +112,7 @@ export default function AboutPage() {
               <CardTitle className="text-base">Our Mission</CardTitle>
             </CardHeader>
             <CardContent>
-              <CardDescription className="text-xs leading-7">
+              <CardDescription className="text-sm leading-7">
                 To give every aspiring programmer — regardless of background or budget — a structured,
                 complete, and honest path from writing their first line of code to building and shipping
                 real software. No shortcuts. No bloat. Just a clear road.
@@ -128,7 +128,7 @@ export default function AboutPage() {
               <CardTitle className="text-base">Our Vision</CardTitle>
             </CardHeader>
             <CardContent>
-              <CardDescription className="text-xs leading-7">
+              <CardDescription className="text-sm leading-7">
                 A world where "I want to learn programming" is never followed by "but I don't know where
                 to start." Dojo LoM becomes the default answer — the one place that takes you seriously
                 from day one and grows with you all the way to mastery.
@@ -142,8 +142,8 @@ export default function AboutPage() {
       <section className="border-b border-border">
         <div className="max-w-6xl mx-auto px-6 py-20">
           <div className="mb-12">
-            <h2 className="text-2xl font-semibold tracking-tight mb-3">What we believe in</h2>
-            <p className="text-muted-foreground text-sm max-w-md">
+            <h2 className="text-3xl font-semibold tracking-tight mb-3">What we believe in</h2>
+            <p className="text-muted-foreground text-base max-w-md">
               The principles that shape every decision we make about the platform.
             </p>
           </div>
@@ -152,10 +152,10 @@ export default function AboutPage() {
               <Card key={v.title} className="py-5 gap-4">
                 <CardHeader className="py-0 gap-3">
                   <div className="text-foreground">{v.icon}</div>
-                  <CardTitle className="text-sm">{v.title}</CardTitle>
+                  <CardTitle className="text-base">{v.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription className="text-xs leading-6">{v.description}</CardDescription>
+                  <CardDescription className="text-sm leading-6">{v.description}</CardDescription>
                 </CardContent>
               </Card>
             ))}
@@ -167,8 +167,8 @@ export default function AboutPage() {
       <section className="bg-zinc-50 border-b border-border">
         <div className="max-w-6xl mx-auto px-6 py-20">
           <div className="mb-12">
-            <h2 className="text-2xl font-semibold tracking-tight mb-3">How we got here</h2>
-            <p className="text-muted-foreground text-sm max-w-md">
+            <h2 className="text-3xl font-semibold tracking-tight mb-3">How we got here</h2>
+            <p className="text-muted-foreground text-base max-w-md">
               The story behind Dojo LoM — from a frustrated learner to an actual platform.
             </p>
           </div>
@@ -186,11 +186,11 @@ export default function AboutPage() {
                 </div>
                 {/* Right: content */}
                 <div className="pb-10 flex flex-col gap-1.5 pt-1">
-                  <span className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+                  <span className="text-xs uppercase tracking-widest text-muted-foreground font-medium">
                     {item.year}
                   </span>
-                  <p className="text-sm font-semibold">{item.title}</p>
-                  <p className="text-xs text-muted-foreground leading-6 max-w-lg">{item.description}</p>
+                  <p className="text-base font-semibold">{item.title}</p>
+                  <p className="text-sm text-muted-foreground leading-6 max-w-lg">{item.description}</p>
                 </div>
               </div>
             ))}
@@ -202,8 +202,8 @@ export default function AboutPage() {
       <section className="border-b border-border">
         <div className="max-w-6xl mx-auto px-6 py-20">
           <div className="mb-12">
-            <h2 className="text-2xl font-semibold tracking-tight mb-3">The team</h2>
-            <p className="text-muted-foreground text-sm max-w-md">
+            <h2 className="text-3xl font-semibold tracking-tight mb-3">The team</h2>
+            <p className="text-muted-foreground text-base max-w-md">
               Two builders. One goal. Still private — but present.
             </p>
           </div>
@@ -216,20 +216,20 @@ export default function AboutPage() {
                     <MaskHappy size={22} weight="fill" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold leading-none mb-1.5">Leopard</p>
-                    <p className="text-[11px] text-muted-foreground">Founder &amp; Lead</p>
+                    <p className="text-base font-semibold leading-none mb-1.5">Leopard</p>
+                    <p className="text-xs text-muted-foreground">Founder &amp; Lead</p>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="flex flex-col gap-4">
-                <p className="text-xs leading-6 text-muted-foreground">
+                <p className="text-sm leading-6 text-muted-foreground">
                   Full-stack developer since 2019. Background in Information &amp; Communications
                   Engineering. Experience across web, DevOps, AI/ML, and mobile. Builds the platform,
                   writes the code, and obsesses over learning paths.
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {["JavaScript", "Python", "Next.js", "Node.js", "PHP", "DevOps", "AI/ML"].map((s) => (
-                    <Badge key={s} variant="outline" className="text-[10px] font-normal gap-1">
+                    <Badge key={s} variant="outline" className="text-xs font-normal gap-1">
                       <Wrench size={9} weight="bold" />{s}
                     </Badge>
                   ))}
@@ -255,26 +255,26 @@ export default function AboutPage() {
                     <MaskHappy size={22} weight="fill" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold leading-none mb-1.5">Ronin</p>
-                    <p className="text-[11px] text-muted-foreground">Founder &amp; Curriculum</p>
+                    <p className="text-base font-semibold leading-none mb-1.5">Ronin</p>
+                    <p className="text-xs text-muted-foreground">Founder &amp; Curriculum</p>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="flex flex-col gap-4">
-                <p className="text-xs leading-6 text-muted-foreground">
+                <p className="text-sm leading-6 text-muted-foreground">
                   A methodical thinker who believes any concept can be taught clearly if introduced in
                   the right order. Shapes the entire curriculum architecture — what comes first, how
                   complexity is layered, and where learners are most likely to give up.
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {["Curriculum Design", "Problem Solving", "Teaching", "Systems Thinking"].map((s) => (
-                    <Badge key={s} variant="outline" className="text-[10px] font-normal gap-1">
+                    <Badge key={s} variant="outline" className="text-xs font-normal gap-1">
                       <Wrench size={9} weight="bold" />{s}
                     </Badge>
                   ))}
                 </div>
                 <div className="flex items-center gap-3 pt-1">
-                  <span className="text-[11px] text-muted-foreground italic">Identity private — coming soon.</span>
+                  <span className="text-xs text-muted-foreground italic">Identity private — coming soon.</span>
                 </div>
               </CardContent>
             </Card>
@@ -286,15 +286,15 @@ export default function AboutPage() {
       <section className="bg-zinc-950">
         <div className="max-w-6xl mx-auto px-6 py-20 flex flex-col items-center text-center gap-5">
           <GraduationCap size={32} weight="duotone" className="text-zinc-400" />
-          <h2 className="text-2xl font-semibold text-white tracking-tight">
+          <h2 className="text-3xl font-semibold text-white tracking-tight">
             Ready to join the Dojo?
           </h2>
-          <p className="text-zinc-400 text-sm max-w-sm">
+          <p className="text-zinc-400 text-base max-w-sm">
             We're opening to the first group of learners soon. Get on the list.
           </p>
           <a
             href="/#waitlist"
-            className="inline-flex items-center gap-2 h-9 px-4 bg-white text-zinc-950 text-xs font-medium hover:bg-zinc-200 transition-colors"
+            className="inline-flex items-center gap-2 h-9 px-4 bg-white text-zinc-950 text-sm font-medium hover:bg-zinc-200 transition-colors"
           >
             Join the Waitlist
           </a>
