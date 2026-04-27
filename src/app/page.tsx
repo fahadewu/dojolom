@@ -14,6 +14,11 @@ import {
   LinkedinLogo,
   Wrench,
   MaskHappy,
+  Robot,
+  Sparkle,
+  ArrowFatRight,
+  Brain,
+  Warning,
 } from "@phosphor-icons/react";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
@@ -332,6 +337,410 @@ console.log(a);   // [1, 2, 3, 4] — unchanged`,
   },
 ];
 
+// ─── Dual-track "Concepts, Two Ways" ──────────────────────────────────────────
+
+const dualTrackTopics = [
+  {
+    id: "api",
+    topic: "APIs",
+    icon: "🔌",
+    plain: {
+      headline: "The waiter at a restaurant",
+      steps: [
+        "You (your app) want data from somewhere — say, today's weather.",
+        "You don't enter the kitchen (the server). You use a menu (the API).",
+        "The waiter (API) carries your request to the kitchen and returns your data.",
+        "You get a structured response — just the information you asked for.",
+      ],
+      summary:
+        "An API is any agreed-upon way for two programs to talk to each other without exposing their internals.",
+    },
+    technical: {
+      note: "APIs expose HTTP endpoints that accept requests and return structured data (usually JSON). You authenticate with API keys or OAuth, specify a method (GET/POST/PUT/DELETE), and handle the response.",
+      code: `import requests
+
+# Call the OpenAI API — same pattern as ANY AI API
+response = requests.post(
+    "https://api.openai.com/v1/chat/completions",
+    headers={"Authorization": f"Bearer {API_KEY}"},
+    json={
+        "model": "gpt-4o",
+        "messages": [{"role": "user",
+                      "content": "Explain loops in 2 lines"}]
+    }
+)
+print(response.json()["choices"][0]["message"]["content"])`,
+    },
+    ai: "Every AI tool you use (ChatGPT, Gemini, Claude, Midjourney) exposes an API. Understanding APIs is the literal gate to building AI-powered applications.",
+  },
+  {
+    id: "database",
+    topic: "Databases",
+    icon: "🗄️",
+    plain: {
+      headline: "A very organised filing cabinet",
+      steps: [
+        "Your app needs to remember things after you close it — accounts, posts, purchases.",
+        "A database is a structured filing system: every drawer (table) holds one type of thing.",
+        "Each folder in a drawer (row) stores the details for one item.",
+        "You can find, update, or delete any record by asking a question — a query.",
+      ],
+      summary:
+        "A database lets your app remember anything, indefinitely, and find it instantly — even with millions of entries.",
+    },
+    technical: {
+      note: "Relational databases (PostgreSQL, MySQL) store data in typed tables. SQL handles CRUD operations. NoSQL (MongoDB, Redis) uses flexible documents or key-value pairs. Vector databases (Pinecone, Weaviate) store AI embeddings for semantic search.",
+      code: `-- Create a table
+CREATE TABLE users (
+    id    SERIAL PRIMARY KEY,
+    name  VARCHAR(100) NOT NULL,
+    email VARCHAR(255) UNIQUE
+);
+
+-- Insert a row
+INSERT INTO users (name, email)
+VALUES ('Alex', 'alex@dojo.dev');
+
+-- Query with a filter
+SELECT name, email
+FROM   users
+WHERE  email LIKE '%@dojo.dev';`,
+    },
+    ai: "AI apps store conversation history and user context in databases. Vector databases store AI 'embeddings' — the mathematical representations that power semantic search and ChatGPT memory.",
+  },
+  {
+    id: "ai",
+    topic: "How AI learns",
+    icon: "🤖",
+    plain: {
+      headline: "Teaching by showing, not by rules",
+      steps: [
+        "You could write rules: 'a cat has fur, four legs, whiskers…' — but exceptions break every rule.",
+        "Instead, show an AI millions of images labelled 'cat' or 'not cat'.",
+        "It adjusts its internal dials (weights) each time it gets one wrong.",
+        "After enough examples, it recognises cats it has never seen before.",
+      ],
+      summary:
+        "Machine learning is programming by example. You don't write the rules — you show so many examples that the pattern emerges on its own.",
+    },
+    technical: {
+      note: "A neural network is a parameterised function. Training minimises a loss function using gradient descent — adjusting millions of weights via backpropagation. LLMs are trained on next-token prediction across trillions of text tokens using transformer architecture.",
+      code: `# Conceptual training loop (PyTorch-style)
+for epoch in range(1000):
+    predictions = model(X_train)       # forward pass
+    loss = criterion(predictions, y)   # measure error
+
+    optimizer.zero_grad()   # reset gradients
+    loss.backward()         # compute gradients
+    optimizer.step()        # update weights
+
+    if epoch % 100 == 0:
+        print(f"Epoch {epoch} | Loss: {loss:.4f}")`,
+    },
+    ai: "Understanding that AI is a pattern-matcher trained on examples — not a reasoning engine — explains why it hallucinates, why prompt context matters, and why fine-tuning on your own data improves results so dramatically.",
+  },
+  {
+    id: "cloud",
+    topic: "The Cloud",
+    icon: "☁️",
+    plain: {
+      headline: "Renting computers you never see",
+      steps: [
+        "Buying your own servers is expensive. What if you could rent exactly as much computing power as you need?",
+        "The cloud is millions of powerful computers in data centres, available to rent by the minute.",
+        "When your app gets popular, you rent more. At 3am with zero users, you rent less.",
+        "AWS, Google Cloud, and Azure provide these rentals — plus databases, AI models, and storage.",
+      ],
+      summary:
+        "The cloud is to computing what electricity is to power — you don't own a generator, you plug in and pay for what you use.",
+    },
+    technical: {
+      note: "Cloud providers offer IaaS (raw VMs), PaaS (managed runtimes), and SaaS (apps). Serverless (Lambda, Vercel Functions) runs code on-demand. Containers (Docker + Kubernetes) package apps for portable, scalable deployment.",
+      code: `# handler.py — deploy to AWS Lambda
+def main(event, context):
+    name = event.get("queryStringParameters", {})
+    return {
+        "statusCode": 200,
+        "body": f"Hello from the cloud, {name}!"
+    }
+
+# serverless.yml (Serverless Framework)
+# service: dojo-api
+# provider:
+#   name: aws
+#   runtime: python3.12
+# functions:
+#   hello:
+#     handler: handler.main
+#     events:
+#       - httpApi: { path: /hello, method: get }`,
+    },
+    ai: "Every AI API call runs on cloud GPUs. Training even a small model requires cloud compute. AWS Bedrock, Google Vertex AI, and Azure OpenAI let you add AI features to apps in a few lines of code.",
+  },
+  {
+    id: "git",
+    topic: "Version Control",
+    icon: "📝",
+    plain: {
+      headline: "A time machine for your code",
+      steps: [
+        "Imagine editing a document and being able to undo any change — even from three weeks ago.",
+        "Git saves a snapshot of your code every time you 'commit', with a message about what changed.",
+        "If you break something, you rewind to the last snapshot that worked.",
+        "Multiple developers can work on the same codebase simultaneously without overwriting each other.",
+      ],
+      summary:
+        "Git is like Google Docs version history — but for code, with the ability to work on different versions in parallel and merge them.",
+    },
+    technical: {
+      note: "Git is a distributed version control system. Each commit hashes the entire tree state (SHA1). Branches are pointers to commits. GitHub/GitLab host remote repos and add collaboration — pull requests, code review, CI/CD pipelines.",
+      code: `# Typical daily Git workflow
+git clone https://github.com/you/project
+git checkout -b feature/add-auth   # new branch
+
+# ... make your changes ...
+
+git add src/auth.py            # stage changes
+git commit -m "Add JWT auth"   # save snapshot
+git push origin feature/add-auth
+
+# Open Pull Request → review → merge to main`,
+    },
+    ai: "AI coding tools (Copilot, Cursor, Aider) integrate deeply with Git. AI can write commit messages, generate PR descriptions, review diffs, and resolve merge conflicts. Git is the shared language between you and AI codegen tools.",
+  },
+  {
+    id: "prompt",
+    topic: "Prompt Engineering",
+    icon: "✍️",
+    plain: {
+      headline: "Briefing a very fast contractor",
+      steps: [
+        "'Write code' gets you generic code. 'Write a Python function that takes a list of prices and returns the top 3 after removing 20% VAT' gets you exactly what you need.",
+        "AI responds to precision. The more context you give, the better the output.",
+        "You can assign AI a role (act as a senior engineer), constraints (no external libraries), and format (add inline comments).",
+        "Iterating — asking follow-up questions and refining — turns a 70% answer into a 99% answer.",
+      ],
+      summary:
+        "Prompting well is like briefing a contractor: the clearer you specify the job, material, and constraints — the less time you spend fixing things after.",
+    },
+    technical: {
+      note: "A prompt is the input context the model conditions on for next-token prediction. Key techniques: zero-shot (direct ask), few-shot (examples in context), chain-of-thought (step-by-step reasoning), role prompting (system message), RAG (inject retrieved documents). Temperature controls randomness.",
+      code: `// System + user message pattern (OpenAI)
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a senior Python engineer.\\nReturn only code. Add inline comments.\\nNever use external libraries."
+    },
+    {
+      "role": "user",
+      "content": "Write a function that validates\\nan email address using regex."
+    }
+  ],
+  "temperature": 0.2,   // lower = more deterministic
+  "model": "gpt-4o"
+}`,
+    },
+    ai: "Prompt engineering is programming in natural language. Precision in prompts will separate people who get mediocre AI output from those who get expert-level results on demand.",
+  },
+];
+
+// ─── AI-era skills ─────────────────────────────────────────────────────────────
+
+const aiEraSkills = [
+  {
+    skill: "Reading & reviewing code",
+    icon: "👁️",
+    tag: "Critical",
+    tagStyle: "bg-red-100 text-red-800",
+    borderColor: "border-l-red-400",
+    why: "AI writes it. You verify it.",
+    detail:
+      "Around 30% of AI-generated code contains bugs or security gaps. The developer who can read, trace, and challenge AI output earns 10× more trust than one who pastes blindly.",
+  },
+  {
+    skill: "Debugging",
+    icon: "🐛",
+    tag: "Essential",
+    tagStyle: "bg-orange-100 text-orange-800",
+    borderColor: "border-l-orange-400",
+    why: "AI fails silently. You investigate.",
+    detail:
+      "AI-generated code breaks in unexpected ways. Reading stack traces, understanding error types, and bisecting bugs is still fundamentally human reasoning that AI assists but cannot replace.",
+  },
+  {
+    skill: "Prompt engineering",
+    icon: "✍️",
+    tag: "New skill",
+    tagStyle: "bg-blue-100 text-blue-800",
+    borderColor: "border-l-blue-400",
+    why: "It's programming in plain English.",
+    detail:
+      "Writing precise, context-rich prompts is the new form of directing a computer. Output quality scales directly with prompt quality — it's a learnable, measurably improvable skill.",
+  },
+  {
+    skill: "Systems design",
+    icon: "🧩",
+    tag: "High value",
+    tagStyle: "bg-violet-100 text-violet-800",
+    borderColor: "border-l-violet-400",
+    why: "AI builds parts. You architect the whole.",
+    detail:
+      "AI can write a route, a component, a query — but it doesn't know your architecture. Understanding how systems connect lets you direct AI to build the right pieces in the right way.",
+  },
+  {
+    skill: "Data literacy",
+    icon: "📊",
+    tag: "High value",
+    tagStyle: "bg-amber-100 text-amber-800",
+    borderColor: "border-l-amber-400",
+    why: "AI runs on data. You manage it.",
+    detail:
+      "Every AI product is built on data. Understanding schemas, quality, bias, and embeddings lets you build products that work in production — not just in demos.",
+  },
+  {
+    skill: "Security awareness",
+    icon: "🔒",
+    tag: "Essential",
+    tagStyle: "bg-rose-100 text-rose-800",
+    borderColor: "border-l-rose-400",
+    why: "AI writes insecure code. You catch it.",
+    detail:
+      "Studies show AI-generated code has higher rates of vulnerabilities (SQLi, XSS, insecure defaults). Knowing OWASP fundamentals is your last line of defence when using AI codegen tools.",
+  },
+];
+
+// ─── AI + Code parallel data ─────────────────────────────────────────────────
+
+const aiParallels = [
+  {
+    topic: "Variables",
+    human: {
+      label: "You write it",
+      code: `name = "Alex"
+age = 22
+print(name, age)`,
+      note: "You understand what's stored, where, and why.",
+    },
+    ai: {
+      label: "AI writes it",
+      prompt: `Prompt: "Store a person's name and age in
+Python and print them."`,
+      output: `name = "Alex"
+age = 22
+print(name, age)`,
+      note: "Same result — but if you don't know what a variable is, you can't verify, fix, or extend it.",
+    },
+  },
+  {
+    topic: "Functions",
+    human: {
+      label: "You write it",
+      code: `def greet(name):
+    return f"Hello, {name}!"
+
+print(greet("Dojo"))`,
+      note: "You control the logic — you can change it, debug it, combine it.",
+    },
+    ai: {
+      label: "AI writes it",
+      prompt: `Prompt: "Write a Python function
+that greets a person by name."`,
+      output: `def greet(name):
+    return f"Hello, {name}!"
+
+print(greet("Dojo"))`,
+      note: "Instant result. But changing 'greet' to do something different requires you to think in functions.",
+    },
+  },
+  {
+    topic: "Loops",
+    human: {
+      label: "You write it",
+      code: `scores = [72, 85, 91, 60]
+
+for s in scores:
+    if s >= 80:
+        print(f"Pass: {s}")`,
+      note: "You can adapt this to any list — products, users, files, API results.",
+    },
+    ai: {
+      label: "AI writes it",
+      prompt: `Prompt: "Loop over a list of scores
+and print ones above 80."`,
+      output: `scores = [72, 85, 91, 60]
+
+for s in scores:
+    if s >= 80:
+        print(f"Pass: {s}")`,
+      note: "The AI got it right this time. Next time you'll need to add filtering, sorting, or saving — understanding loops means you can guide it.",
+    },
+  },
+  {
+    topic: "Debugging",
+    human: {
+      label: "You read the error",
+      code: `# TypeError: can only concatenate
+# str (not "int") to str
+
+age = 22
+print("Age: " + age)
+
+# Fix:
+print("Age: " + str(age))`,
+      note: "Reading errors is a skill. You learn what types are, why they matter, and how to fix them.",
+    },
+    ai: {
+      label: "AI explains the error",
+      prompt: `Prompt: "I got TypeError: can only
+concatenate str not int. Fix it."`,
+      output: `# AI says: convert int to str
+age = 22
+print("Age: " + str(age))
+# ✓ Fixed`,
+      note: "Great — but next time you get a different error, will you recognise it? Knowing the 'why' means you don't need to ask every time.",
+    },
+  },
+];
+
+const aiPromptTips = [
+  {
+    label: "Ask for explanations",
+    icon: "💬",
+    bad: `"Write me a sorting algorithm."`,
+    good: `"Write a Python bubble sort and explain each line as a comment. I'm a beginner."`,
+    why: "The explanation is the lesson. Code alone teaches nothing — force the AI to narrate what it's doing.",
+  },
+  {
+    label: "Give context",
+    icon: "🎯",
+    bad: `"Fix this code."`,
+    good: `"I'm learning Python. This loop is supposed to print even numbers from 1–10 but it prints nothing. Here's my code: [paste]. What am I missing?"`,
+    why: "AI doesn't know your level or intent. Context makes the response 10× more useful and educational.",
+  },
+  {
+    label: "Ask it to quiz you",
+    icon: "🧠",
+    bad: `"Explain arrays."`,
+    good: `"Explain arrays in Python in 3 sentences, then ask me 2 quiz questions to test if I understood."`,
+    why: "Passive reading fades. Forcing retrieval (even with an AI) builds real memory.",
+  },
+  {
+    label: "Spot the bug yourself first",
+    icon: "🔍",
+    bad: `"Here's my code, what's wrong?" (paste immediately)`,
+    good: `"I think the bug is on line 7 — something about the loop condition. Am I right? If not, give me a hint before the answer."`,
+    why: "The struggle is where learning happens. Use AI to confirm or nudge, not to skip the thinking.",
+  },
+  {
+    label: "Build, then break, then ask",
+    icon: "⚙️",
+    bad: `"Build me a todo app."`,
+    good: `"I built a todo app but deleting items doesn't update the list. Here's the relevant function. What concept am I misunderstanding about state?"`,
+    why: "This shifts AI from code-generator to teacher. You own the project; it helps you understand the gap.",
+  },
+];
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Home() {
@@ -340,6 +749,10 @@ export default function Home() {
   const [activeConcept, setActiveConcept] = useState(0);
   const [activeLang, setActiveLang] = useState<"py" | "js">("py");
   const [quizAnswer, setQuizAnswer] = useState<number | null>(null);
+  const [activeParallel, setActiveParallel] = useState(0);
+  const [activePromptTip, setActivePromptTip] = useState(0);
+  const [activeDualTrack, setActiveDualTrack] = useState(0);
+  const [dualTrackView, setDualTrackView] = useState<"plain" | "technical">("plain");
 
   function handleJoinWaitlist(email: string, clear: () => void) {
     if (!email.trim() || !email.includes("@")) {
@@ -596,6 +1009,318 @@ export default function Home() {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Code vs AI ── */}
+      <section className="border-t border-border">
+        <div className="max-w-6xl mx-auto px-6 py-20">
+          <div className="mb-10">
+            <div className="flex items-center gap-2 text-muted-foreground mb-4">
+              <Robot size={16} weight="bold" />
+              <span className="text-xs uppercase tracking-widest font-medium">Programming + AI</span>
+            </div>
+            <h2 className="text-3xl font-semibold tracking-tight mb-3">
+              Code it yourself.<br />Then do it faster with AI.
+            </h2>
+            <p className="text-muted-foreground text-base max-w-xl">
+              AI can write any of the code below in seconds. But if you don't understand what it wrote,
+              you can't fix it, improve it, or build on it. Learn the concept first — then use AI as a force multiplier.
+            </p>
+          </div>
+
+          {/* Topic tabs */}
+          <div className="flex flex-wrap gap-2 mb-8">
+            {aiParallels.map((p, i) => (
+              <button
+                key={p.topic}
+                onClick={() => setActiveParallel(i)}
+                className={`px-3 py-1.5 text-sm border transition-colors ${
+                  activeParallel === i
+                    ? "bg-foreground text-background border-foreground"
+                    : "bg-white border-border text-muted-foreground hover:text-foreground hover:border-foreground/40"
+                }`}
+              >
+                {p.topic}
+              </button>
+            ))}
+          </div>
+
+          {/* Side by side */}
+          <div className="grid md:grid-cols-2 gap-0 border border-border">
+            {/* Left — Human */}
+            <div className="flex flex-col border-r border-border">
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-zinc-50">
+                <Code size={14} weight="bold" />
+                <span className="text-sm font-medium">{aiParallels[activeParallel].human.label}</span>
+              </div>
+              <pre className="bg-zinc-950 text-green-400 p-5 text-sm leading-7 font-mono overflow-x-auto flex-1 whitespace-pre">{aiParallels[activeParallel].human.code}</pre>
+              <div className="px-4 py-3 border-t border-border bg-white">
+                <p className="text-sm text-muted-foreground leading-6">
+                  <CheckCircle size={13} weight="fill" className="inline mr-1.5 text-foreground" />
+                  {aiParallels[activeParallel].human.note}
+                </p>
+              </div>
+            </div>
+
+            {/* Right — AI */}
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-zinc-50">
+                <Sparkle size={14} weight="fill" />
+                <span className="text-sm font-medium">{aiParallels[activeParallel].ai.label}</span>
+              </div>
+              <div className="bg-zinc-950 p-5 flex flex-col gap-3 flex-1">
+                <pre className="text-zinc-400 text-sm leading-6 font-mono whitespace-pre-wrap">{aiParallels[activeParallel].ai.prompt}</pre>
+                <div className="flex items-center gap-2 text-zinc-600 text-xs">
+                  <ArrowFatRight size={12} weight="fill" /> output
+                </div>
+                <pre className="text-green-400 text-sm leading-7 font-mono whitespace-pre">{aiParallels[activeParallel].ai.output}</pre>
+              </div>
+              <div className="px-4 py-3 border-t border-border bg-amber-50">
+                <p className="text-sm text-amber-800 leading-6">
+                  <Warning size={13} weight="fill" className="inline mr-1.5" />
+                  {aiParallels[activeParallel].ai.note}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <p className="text-sm text-muted-foreground mt-6 max-w-2xl leading-7">
+            <span className="text-foreground font-medium">The takeaway:</span>{" "}
+            AI is a brilliant co-pilot — but you need to know how to fly first.
+            Every concept in Dojo LoM is one that makes your AI-assisted code dramatically better.
+          </p>
+        </div>
+      </section>
+
+      {/* ── Prompt Engineering for Learners ── */}
+      <section className="border-t border-border bg-zinc-50">
+        <div className="max-w-6xl mx-auto px-6 py-20">
+          <div className="mb-10">
+            <div className="flex items-center gap-2 text-muted-foreground mb-4">
+              <Brain size={16} weight="bold" />
+              <span className="text-xs uppercase tracking-widest font-medium">AI as your coding partner</span>
+            </div>
+            <h2 className="text-3xl font-semibold tracking-tight mb-3">How to learn with AI — the right way</h2>
+            <p className="text-muted-foreground text-base max-w-xl">
+              Most people use AI to skip the thinking. The best learners use it to deepen it.
+              Here's how to turn ChatGPT, Copilot, or any LLM into a patient teacher rather than a cheat sheet.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-[220px_1fr] gap-6 items-start">
+            {/* Tip list */}
+            <div className="flex flex-col gap-1">
+              {aiPromptTips.map((t, i) => (
+                <button
+                  key={t.label}
+                  onClick={() => setActivePromptTip(i)}
+                  className={`flex items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors border ${
+                    activePromptTip === i
+                      ? "bg-foreground text-background border-foreground"
+                      : "bg-white border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
+                  }`}
+                >
+                  <span>{t.icon}</span>
+                  <span className="leading-5">{t.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Tip detail */}
+            <div className="flex flex-col gap-0 border border-border">
+              <div className="px-5 py-4 border-b border-border bg-white">
+                <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-1">Instead of</p>
+                <p className="text-sm font-mono bg-red-50 border border-red-200 text-red-800 px-3 py-2 leading-6">
+                  {aiPromptTips[activePromptTip].bad}
+                </p>
+              </div>
+              <div className="px-5 py-4 border-b border-border bg-white">
+                <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-1">Try this</p>
+                <p className="text-sm font-mono bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-2 leading-6 whitespace-pre-wrap">
+                  {aiPromptTips[activePromptTip].good}
+                </p>
+              </div>
+              <div className="px-5 py-4 bg-zinc-50">
+                <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-2">Why it matters</p>
+                <p className="text-sm text-muted-foreground leading-7">{aiPromptTips[activePromptTip].why}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Concepts, Two Ways ── */}
+      <section className="border-t border-border">
+        <div className="max-w-6xl mx-auto px-6 py-20">
+          <div className="mb-10">
+            <div className="flex items-center gap-2 text-muted-foreground mb-4">
+              <GraduationCap size={16} weight="bold" />
+              <span className="text-xs uppercase tracking-widest font-medium">Learn it your way</span>
+            </div>
+            <h2 className="text-3xl font-semibold tracking-tight mb-3">
+              Tech concepts — for everyone
+            </h2>
+            <p className="text-muted-foreground text-base max-w-xl">
+              Whether you've never coded before or you're already writing scripts,
+              these are the concepts that run the modern tech world.
+              Pick your level — the same idea, two depths.
+            </p>
+
+            {/* Plain / Technical toggle */}
+            <div className="flex gap-0 mt-6 border border-border w-fit">
+              <button
+                onClick={() => setDualTrackView("plain")}
+                className={`px-4 py-2 text-sm transition-colors ${
+                  dualTrackView === "plain"
+                    ? "bg-foreground text-background"
+                    : "bg-white text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                🟢 Plain English
+              </button>
+              <button
+                onClick={() => setDualTrackView("technical")}
+                className={`px-4 py-2 text-sm border-l border-border transition-colors ${
+                  dualTrackView === "technical"
+                    ? "bg-foreground text-background"
+                    : "bg-white text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                🔵 Technical
+              </button>
+            </div>
+          </div>
+
+          {/* Topic pills */}
+          <div className="flex flex-wrap gap-2 mb-8">
+            {dualTrackTopics.map((t, i) => (
+              <button
+                key={t.id}
+                onClick={() => setActiveDualTrack(i)}
+                className={`flex items-center gap-2 px-3 py-1.5 text-sm border transition-colors ${
+                  activeDualTrack === i
+                    ? "bg-foreground text-background border-foreground"
+                    : "bg-white border-border text-muted-foreground hover:text-foreground hover:border-foreground/40"
+                }`}
+              >
+                <span>{t.icon}</span>
+                <span>{t.topic}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Content */}
+          {dualTrackView === "plain" ? (
+            <div className="border border-border">
+              <div className="px-6 py-5 border-b border-border bg-zinc-50 flex items-center gap-3">
+                <span className="text-2xl">{dualTrackTopics[activeDualTrack].icon}</span>
+                <div>
+                  <p className="font-semibold text-base">{dualTrackTopics[activeDualTrack].topic}</p>
+                  <p className="text-sm text-muted-foreground">{dualTrackTopics[activeDualTrack].plain.headline}</p>
+                </div>
+              </div>
+              <div className="px-6 py-6">
+                <ol className="flex flex-col gap-4">
+                  {dualTrackTopics[activeDualTrack].plain.steps.map((step, i) => (
+                    <li key={i} className="flex gap-4 items-start">
+                      <span className="min-w-[28px] h-7 bg-foreground text-background text-sm flex items-center justify-center font-semibold shrink-0">
+                        {i + 1}
+                      </span>
+                      <p className="text-base text-muted-foreground leading-7 pt-0.5">{step}</p>
+                    </li>
+                  ))}
+                </ol>
+                <div className="mt-6 border-t border-border pt-5">
+                  <p className="text-sm text-muted-foreground leading-7">
+                    <span className="text-foreground font-medium">In short: </span>
+                    {dualTrackTopics[activeDualTrack].plain.summary}
+                  </p>
+                </div>
+              </div>
+              <div className="px-6 py-4 bg-zinc-950 border-t border-zinc-800 flex gap-3 items-start">
+                <Robot size={16} weight="fill" className="text-zinc-400 mt-0.5 shrink-0" />
+                <p className="text-sm text-zinc-300 leading-7">
+                  <span className="text-white font-medium">AI connection: </span>
+                  {dualTrackTopics[activeDualTrack].ai}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="border border-border">
+              <div className="px-6 py-5 border-b border-border bg-zinc-50 flex items-center gap-3">
+                <span className="text-2xl">{dualTrackTopics[activeDualTrack].icon}</span>
+                <div>
+                  <p className="font-semibold text-base">{dualTrackTopics[activeDualTrack].topic}</p>
+                  <p className="text-sm text-muted-foreground">{dualTrackTopics[activeDualTrack].technical.note}</p>
+                </div>
+              </div>
+              <pre className="bg-zinc-950 text-green-400 p-6 text-sm leading-7 font-mono overflow-x-auto whitespace-pre">
+                {dualTrackTopics[activeDualTrack].technical.code}
+              </pre>
+              <div className="px-6 py-4 bg-zinc-950 border-t border-zinc-800 flex gap-3 items-start">
+                <Robot size={16} weight="fill" className="text-zinc-400 mt-0.5 shrink-0" />
+                <p className="text-sm text-zinc-300 leading-7">
+                  <span className="text-white font-medium">AI connection: </span>
+                  {dualTrackTopics[activeDualTrack].ai}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ── Skills for the AI Era ── */}
+      <section className="border-t border-border bg-zinc-50">
+        <div className="max-w-6xl mx-auto px-6 py-20">
+          <div className="mb-10">
+            <div className="flex items-center gap-2 text-muted-foreground mb-4">
+              <Sparkle size={16} weight="fill" />
+              <span className="text-xs uppercase tracking-widest font-medium">The AI era</span>
+            </div>
+            <h2 className="text-3xl font-semibold tracking-tight mb-3">
+              Skills that actually matter now
+            </h2>
+            <p className="text-muted-foreground text-base max-w-xl">
+              AI doesn't make programming skills obsolete — it raises the floor and amplifies the ceiling.
+              Here's what's more valuable than ever in a world where AI writes first drafts of everything.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {aiEraSkills.map((s) => (
+              <div
+                key={s.skill}
+                className={`bg-white border border-border border-l-4 ${s.borderColor} flex flex-col gap-3 p-5`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{s.icon}</span>
+                    <p className="font-semibold text-base leading-5">{s.skill}</p>
+                  </div>
+                  <span className={`text-xs px-2 py-0.5 font-medium shrink-0 ${s.tagStyle}`}>
+                    {s.tag}
+                  </span>
+                </div>
+                <p className="text-sm font-medium text-foreground">{s.why}</p>
+                <p className="text-sm text-muted-foreground leading-6">{s.detail}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 border border-border bg-white p-6 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
+            <div>
+              <p className="font-semibold text-base mb-1">The bottom line</p>
+              <p className="text-sm text-muted-foreground leading-6 max-w-xl">
+                AI handles the boilerplate. You handle the architecture, the judgment calls, the security,
+                and the quality bar. The engineers who learn to work <em>with</em> AI — rather than be replaced by it
+                — are the ones who build the future.
+              </p>
+            </div>
+            <Button variant="default" size="lg" className="shrink-0" asChild>
+              <a href="#waitlist">Start learning →</a>
+            </Button>
           </div>
         </div>
       </section>
