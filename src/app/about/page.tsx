@@ -1,305 +1,155 @@
-"use client";
-import {
-  GraduationCap,
-  Terminal,
-  Rocket,
-  Eye,
-  UsersThree,
-  MaskHappy,
-  GithubLogo,
-  LinkedinLogo,
-  Wrench,
-  BookOpen,
-  Code,
-  Globe,
-} from "@phosphor-icons/react";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowRight, Ear, Palette, UsersThree, Globe } from "@phosphor-icons/react/dist/ssr";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { SectionHeading } from "@/components/section-heading";
+import { FounderCards } from "@/components/founders";
+import { tint } from "@/lib/tint";
+import { cn } from "@/lib/utils";
 
-const values = [
+export const metadata: Metadata = {
+  title: "About — Dojolom",
+  description: "Why Dojolom starts with the learner, not the lesson.",
+};
+
+const beliefs = [
   {
-    icon: <BookOpen size={22} weight="duotone" />,
-    title: "Depth over breadth",
-    description:
-      "We'd rather have you truly understand 10 concepts than superficially touch 100. Every lesson earns its place.",
+    icon: Ear,
+    title: "Listen before teaching",
+    text: "The same idea needs a different door for different minds. We ask first, then choose the door.",
+    tint: "focus",
   },
   {
-    icon: <Code size={22} weight="duotone" />,
-    title: "Code first",
-    description:
-      "No passive watching. You write real code from lesson one. Mistakes are the curriculum.",
+    icon: Palette,
+    title: "Form is part of the lesson",
+    text: "Colour, position and rhythm are not decoration. They are how memory files things away.",
+    tint: "sun",
   },
   {
-    icon: <UsersThree size={22} weight="duotone" />,
-    title: "Community matters",
-    description:
-      "Learning alone is hard. Dojo LoM is built around peer learning — ask, share, and teach back.",
+    icon: UsersThree,
+    title: "Play is serious",
+    text: "A game that drills one idea for five minutes beats an hour of nodding along to a lecture.",
+    tint: "play",
   },
   {
-    icon: <Globe size={22} weight="duotone" />,
-    title: "Accessible to all",
-    description:
-      "Great programming education shouldn't depend on geography or budget. We're building for everyone.",
+    icon: Globe,
+    title: "Any subject, any age",
+    text: "A nine-year-old learning fractions and a forty-year-old learning to budget deserve the same care.",
+    tint: "sprout",
   },
-];
+] as const;
 
 const timeline = [
-  {
-    year: "2019",
-    title: "The spark",
-    description:
-      "Leopard begins his programming journey — self-taught, frustrated with scattered resources, learning the hard way.",
-  },
-  {
-    year: "2022",
-    title: "The idea",
-    description:
-      "After years of building real projects and mentoring peers, the lack of structured, honest learning paths becomes impossible to ignore.",
-  },
-  {
-    year: "2024",
-    title: "The partnership",
-    description:
-      "Ronin joins as Founder, bringing a curriculum-design mindset that turns rough ideas into a proper learning framework.",
-  },
-  {
-    year: "2025",
-    title: "Building in the open",
-    description:
-      "First tracks drafted, community feedback gathered, platform architecture finalized. Early access cohort announced.",
-  },
-  {
-    year: "2026",
-    title: "Early access",
-    description:
-      "Dojo LoM opens its doors to the first cohort of learners. The Dojo is open.",
-  },
+  { year: "2019", title: "Learning the hard way", text: "Leopard starts teaching himself, piecing together scattered resources and noticing which ones actually stuck and why." },
+  { year: "2022", title: "The pattern", text: "Years of mentoring show the same thing over and over: people were not bad at subjects, they were given the wrong form of them." },
+  { year: "2024", title: "Two founders", text: "Ronin joins with a curriculum-design mindset. The question shifts from what should we teach to how does this person learn." },
+  { year: "2025", title: "From code to everything", text: "What began as a programming school becomes a general learning platform. First learner profiles and syllabus engine drafted." },
+  { year: "2026", title: "Early access", text: "Dojolom opens the questionnaire to a first group of learners across a dozen subjects." },
 ];
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-white text-foreground font-mono">
+    <div className="min-h-screen bg-background text-foreground">
       <Navbar />
 
-      {/* ── Hero ── */}
-      <section className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 py-20">
-          <div className="max-w-2xl">
-            <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-4">About Dojo LoM</p>
-            <h1 className="text-5xl font-semibold tracking-tight leading-tight mb-5">
-              Built because the<br />right thing didn't exist.
+      <main>
+        <section className="max-w-6xl mx-auto px-6 pt-16 pb-16 md:pt-28 md:pb-24">
+          <div className="max-w-3xl flex flex-col gap-7">
+            <h1 className="text-[2.75rem] sm:text-6xl lg:text-[4.25rem] font-semibold leading-[1.02]">
+              Built because learning kept being taught the wrong way round.
             </h1>
-            <p className="text-base text-muted-foreground leading-7">
-              Dojo LoM was born out of a simple frustration: every programming platform either
-              holds your hand until you can't think for yourself, or throws you in the deep end
-              with no direction. We're building the middle path — structured, honest,
-              hands-on education from first principles.
+            <p className="lede max-w-2xl">
+              Most platforms pick a lesson and hope it fits you. Dojolom asks about you first, works out
+              how you learn, and only then decides what a lesson should look like. The result is a personal
+              syllabus made of infographics, mini-games and short videos, for any subject you care about.
             </p>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ── Mission & Vision ── */}
-      <section className="bg-zinc-50 border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 py-20 grid md:grid-cols-2 gap-8">
-          <Card className="py-6 gap-0">
-            <CardHeader className="py-0 gap-3 mb-4">
-              <div className="size-9 border border-border flex items-center justify-center text-foreground">
-                <Rocket size={18} weight="duotone" />
-              </div>
-              <CardTitle className="text-base">Our Mission</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription className="text-sm leading-7">
-                To give every aspiring programmer — regardless of background or budget — a structured,
-                complete, and honest path from writing their first line of code to building and shipping
-                real software. No shortcuts. No bloat. Just a clear road.
-              </CardDescription>
-            </CardContent>
-          </Card>
-
-          <Card className="py-6 gap-0">
-            <CardHeader className="py-0 gap-3 mb-4">
-              <div className="size-9 border border-border flex items-center justify-center text-foreground">
-                <Eye size={18} weight="duotone" />
-              </div>
-              <CardTitle className="text-base">Our Vision</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription className="text-sm leading-7">
-                A world where "I want to learn programming" is never followed by "but I don't know where
-                to start." Dojo LoM becomes the default answer — the one place that takes you seriously
-                from day one and grows with you all the way to mastery.
-              </CardDescription>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* ── Values ── */}
-      <section className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 py-20">
-          <div className="mb-12">
-            <h2 className="text-3xl font-semibold tracking-tight mb-3">What we believe in</h2>
-            <p className="text-muted-foreground text-base max-w-md">
-              The principles that shape every decision we make about the platform.
-            </p>
+        <section className="max-w-6xl mx-auto px-6 pb-20 md:pb-28">
+          <div className="grid md:grid-cols-2 gap-5">
+            <div className="rounded-[28px] bg-focus text-white p-8 md:p-10 flex flex-col gap-4 min-h-72">
+              <p className="text-sm font-semibold text-white/70">Our mission</p>
+              <p className="font-display text-2xl md:text-[1.75rem] font-medium leading-[1.3] mt-auto">
+                To give anyone, at any age and any budget, a way to learn anything that fits how their
+                mind works. Short, playful, honest, and in the right order.
+              </p>
+            </div>
+            <div className="rounded-[28px] bg-sun text-ink p-8 md:p-10 flex flex-col gap-4 min-h-72">
+              <p className="text-sm font-semibold text-ink/60">Our vision</p>
+              <p className="font-display text-2xl md:text-[1.75rem] font-medium leading-[1.3] mt-auto">
+                A world where nobody says &ldquo;I&rsquo;m just not a math person&rdquo; because the subject
+                was finally shown to them in a form they could hold.
+              </p>
+            </div>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {values.map((v) => (
-              <Card key={v.title} className="py-5 gap-4">
-                <CardHeader className="py-0 gap-3">
-                  <div className="text-foreground">{v.icon}</div>
-                  <CardTitle className="text-base">{v.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-sm leading-6">{v.description}</CardDescription>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ── Story / Timeline ── */}
-      <section className="bg-zinc-50 border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 py-20">
-          <div className="mb-12">
-            <h2 className="text-3xl font-semibold tracking-tight mb-3">How we got here</h2>
-            <p className="text-muted-foreground text-base max-w-md">
-              The story behind Dojo LoM — from a frustrated learner to an actual platform.
-            </p>
-          </div>
-          <div className="flex flex-col gap-0">
-            {timeline.map((item, i) => (
-              <div key={item.year} className="flex gap-6 group">
-                {/* Left: year + line */}
-                <div className="flex flex-col items-center">
-                  <div className="size-8 border border-border bg-white flex items-center justify-center shrink-0 z-10">
-                    <Terminal size={12} weight="bold" />
+        <section className="border-y border-border bg-card">
+          <div className="max-w-6xl mx-auto px-6 py-20 md:py-28">
+            <SectionHeading title="What we believe" lede="Four ideas that every lesson on Dojolom is checked against." />
+            <div className="grid sm:grid-cols-2 gap-x-12 gap-y-12">
+              {beliefs.map((b) => {
+                const t = tint[b.tint];
+                return (
+                  <div key={b.title} className="flex gap-5">
+                    <span className={cn("size-12 shrink-0 rounded-2xl inline-flex items-center justify-center", t.chip)}>
+                      <b.icon size={26} weight="duotone" />
+                    </span>
+                    <div className="flex flex-col gap-2">
+                      <h3 className="text-xl font-semibold">{b.title}</h3>
+                      <p className="text-[15px] text-muted-foreground leading-7 max-w-md">{b.text}</p>
+                    </div>
                   </div>
-                  {i < timeline.length - 1 && (
-                    <div className="w-px flex-1 bg-border mt-0 mb-0 min-h-8" />
-                  )}
-                </div>
-                {/* Right: content */}
-                <div className="pb-10 flex flex-col gap-1.5 pt-1">
-                  <span className="text-xs uppercase tracking-widest text-muted-foreground font-medium">
-                    {item.year}
-                  </span>
-                  <p className="text-base font-semibold">{item.title}</p>
-                  <p className="text-sm text-muted-foreground leading-6 max-w-lg">{item.description}</p>
-                </div>
-              </div>
-            ))}
+                );
+              })}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ── Team ── */}
-      <section className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 py-20">
-          <div className="mb-12">
-            <h2 className="text-3xl font-semibold tracking-tight mb-3">The team</h2>
-            <p className="text-muted-foreground text-base max-w-md">
-              Two builders. One goal. Still private — but present.
-            </p>
+        <section className="max-w-6xl mx-auto px-6 py-20 md:py-28">
+          <div className="grid lg:grid-cols-[0.8fr_1.2fr] gap-12">
+            <SectionHeading title="How we got here" lede="Seven years, one question, and a slow change of mind about what a lesson is." className="mb-0" />
+            <ol className="flex flex-col">
+              {timeline.map((t, i) => {
+                const last = i === timeline.length - 1;
+                return (
+                  <li key={t.year} className="grid grid-cols-[4.5rem_auto_1fr] gap-x-5">
+                    <span className={cn("font-display text-lg font-semibold tabular-nums pt-0.5", last ? "text-sun-deep" : "text-focus")}>{t.year}</span>
+                    <div className="flex flex-col items-center">
+                      <span className={cn("mt-2 size-3 shrink-0 rounded-full ring-4 ring-background", last ? "bg-sun" : "bg-focus")} />
+                      {!last && <span className="w-px flex-1 bg-border" />}
+                    </div>
+                    <div className={cn("flex flex-col gap-1.5", !last && "pb-10")}>
+                      <h3 className="text-xl font-semibold leading-snug">{t.title}</h3>
+                      <p className="text-[15px] text-muted-foreground leading-7 max-w-lg">{t.text}</p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
           </div>
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Leopard */}
-            <Card className="py-6 gap-0">
-              <CardHeader className="py-0 gap-4 mb-5">
-                <div className="flex items-center gap-3">
-                  <div className="size-12 rounded-full bg-foreground text-background flex items-center justify-center shrink-0 select-none">
-                    <MaskHappy size={22} weight="fill" />
-                  </div>
-                  <div>
-                    <p className="text-base font-semibold leading-none mb-1.5">Leopard</p>
-                    <p className="text-xs text-muted-foreground">Founder &amp; Lead</p>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-                <p className="text-sm leading-6 text-muted-foreground">
-                  Full-stack developer since 2019. Background in Information &amp; Communications
-                  Engineering. Experience across web, DevOps, AI/ML, and mobile. Builds the platform,
-                  writes the code, and obsesses over learning paths.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {["JavaScript", "Python", "Next.js", "Node.js", "PHP", "DevOps", "AI/ML"].map((s) => (
-                    <Badge key={s} variant="outline" className="text-xs font-normal gap-1">
-                      <Wrench size={9} weight="bold" />{s}
-                    </Badge>
-                  ))}
-                </div>
-                <div className="flex items-center gap-3 pt-1">
-                  <a href="https://github.com/fahadewu" target="_blank" rel="noopener noreferrer"
-                    aria-label="GitHub" className="text-muted-foreground hover:text-foreground transition-colors">
-                    <GithubLogo size={15} weight="bold" />
-                  </a>
-                  <a href="https://www.linkedin.com/in/fahad-m-3b63211b5/" target="_blank" rel="noopener noreferrer"
-                    aria-label="LinkedIn" className="text-muted-foreground hover:text-foreground transition-colors">
-                    <LinkedinLogo size={15} weight="bold" />
-                  </a>
-                </div>
-              </CardContent>
-            </Card>
+        </section>
 
-            {/* Ronin */}
-            <Card className="py-6 gap-0">
-              <CardHeader className="py-0 gap-4 mb-5">
-                <div className="flex items-center gap-3">
-                  <div className="size-12 rounded-full bg-foreground text-background flex items-center justify-center shrink-0 select-none">
-                    <MaskHappy size={22} weight="fill" />
-                  </div>
-                  <div>
-                    <p className="text-base font-semibold leading-none mb-1.5">Ronin</p>
-                    <p className="text-xs text-muted-foreground">Founder &amp; Curriculum</p>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-                <p className="text-sm leading-6 text-muted-foreground">
-                  A methodical thinker who believes any concept can be taught clearly if introduced in
-                  the right order. Shapes the entire curriculum architecture — what comes first, how
-                  complexity is layered, and where learners are most likely to give up.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {["Curriculum Design", "Problem Solving", "Teaching", "Systems Thinking"].map((s) => (
-                    <Badge key={s} variant="outline" className="text-xs font-normal gap-1">
-                      <Wrench size={9} weight="bold" />{s}
-                    </Badge>
-                  ))}
-                </div>
-                <div className="flex items-center gap-3 pt-1">
-                  <span className="text-xs text-muted-foreground italic">Identity private — coming soon.</span>
-                </div>
-              </CardContent>
-            </Card>
+        <section className="max-w-6xl mx-auto px-6 pb-20 md:pb-28">
+          <SectionHeading title="The team" lede="Two founders, one building the engine and one designing what it teaches." />
+          <FounderCards />
+        </section>
+
+        <section className="max-w-6xl mx-auto px-6 pb-20 md:pb-28">
+          <div className="rounded-[32px] bg-ink text-white p-8 md:p-14 flex flex-col md:flex-row md:items-center justify-between gap-8">
+            <div className="flex flex-col gap-3 max-w-lg">
+              <h2 className="text-[2rem] md:text-[2.5rem] font-semibold leading-[1.1]">See what we build for you</h2>
+              <p className="text-lg text-white/65 leading-8">Two minutes of questions, then a profile and a syllabus you can keep.</p>
+            </div>
+            <Button size="lg" variant="sun" className="shrink-0" asChild>
+              <Link href="/start">Start now <ArrowRight size={18} weight="bold" /></Link>
+            </Button>
           </div>
-        </div>
-      </section>
-
-      {/* ── CTA ── */}
-      <section className="bg-zinc-950">
-        <div className="max-w-6xl mx-auto px-6 py-20 flex flex-col items-center text-center gap-5">
-          <GraduationCap size={32} weight="duotone" className="text-zinc-400" />
-          <h2 className="text-3xl font-semibold text-white tracking-tight">
-            Ready to join the Dojo?
-          </h2>
-          <p className="text-zinc-400 text-base max-w-sm">
-            We're opening to the first group of learners soon. Get on the list.
-          </p>
-          <a
-            href="/#waitlist"
-            className="inline-flex items-center gap-2 h-9 px-4 bg-white text-zinc-950 text-sm font-medium hover:bg-zinc-200 transition-colors"
-          >
-            Join the Waitlist
-          </a>
-        </div>
-      </section>
+        </section>
+      </main>
 
       <Footer />
     </div>

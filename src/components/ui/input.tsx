@@ -2,15 +2,15 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+export const fieldClasses =
+  "w-full min-w-0 rounded-xl border border-input bg-card px-4 text-base text-foreground placeholder:text-muted-foreground/70 shadow-[0_1px_2px_rgb(20_27_45/0.04)] transition-[border-color,box-shadow] duration-200 outline-none hover:border-foreground/25 focus-visible:border-focus focus-visible:ring-4 focus-visible:ring-focus/15 aria-invalid:border-destructive aria-invalid:ring-4 aria-invalid:ring-destructive/15 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   return (
     <input
       type={type}
       data-slot="input"
-      className={cn(
-        "border-input bg-background placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 flex h-8 w-full min-w-0 rounded-none border bg-transparent px-3 py-1 text-xs shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-1 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 [&[type=file]]:cursor-pointer",
-        className
-      )}
+      className={cn(fieldClasses, "flex h-12 [&[type=file]]:cursor-pointer", className)}
       {...props}
     />
   )
