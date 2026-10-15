@@ -10,6 +10,7 @@ import { gradeFor, meetsGrade, type BdGrade } from "@/lib/personal";
 import { cn } from "@/lib/utils";
 import { guessRate, mulberry32, retryItem, shuffle, type Confidence, type MemoryState, type ReadSample, type ReviewItem, type Segment } from "@/lib/study";
 import type { Concept, Question } from "@/content/types";
+import { reviewItemText, type Asked } from "@/lib/tutor/items";
 
 type CheckSeg = Extract<Segment, { kind: "check" }>;
 type CheckpointSeg = Extract<Segment, { kind: "checkpoint" }>;
@@ -19,14 +20,17 @@ type Item =
   | { conceptId: string; kind: "misconception"; statement: string; why: string }
   | { conceptId: string; kind: "retry"; item: ReviewItem; concept: Concept }; // a second go after a miss, from another angle
 
-export interface AnswerMeta { item?: ReviewItem; thinkMs?: number; guess: number; read?: ReadSample }
+export interface AnswerMeta { item?: ReviewItem; thinkMs?: number; guess: number; read?: ReadSample; asked?: Asked }
 
 const metaFor = (item: Item, card?: CardMeta): AnswerMeta => {
   const thinkMs = card?.thinkMs;
   const base = item.kind === "quiz" ? { guess: guessRate("quiz", item.q.options.length), thinkMs }
     : item.kind === "misconception" ? { guess: guessRate("misconception") }
       : { item: item.item, thinkMs, guess: guessRate(item.item.source, item.item.source === "quiz" ? item.concept.quiz[item.item.index % item.concept.quiz.length]?.options.length : undefined) };
-  return { ...base, read: card?.read };
+  const asked: Asked = item.kind === "quiz" ? { question: item.q.question, answer: item.q.options[item.q.answer] }
+    : item.kind === "misconception" ? { question: `True or false: ${item.statement}`, answer: "False" }
+      : reviewItemText(item.concept, item.item);
+  return { ...base, read: card?.read, asked };
 };
 
 function QuizRunner({

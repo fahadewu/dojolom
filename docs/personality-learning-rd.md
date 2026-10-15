@@ -2,6 +2,8 @@
 
 *October 2026. Companion to `how-people-learn-rd.md` and `bangladesh-curriculum-rd.md`.*
 
+> **Update, 16 October 2026.** The AI tutor (`ai-tutor-rd.md`) widens "personal" to interests, a chosen tutor voice and a stated preference for how things are explained. It stays inside this review's conclusion: none of them changes what is taught or how it is marked. Interests change only the story of an example (context personalisation, Walkington 2013), the voice changes only how the tutor sounds, and the preference is only where it starts. The five scenario questions that produced a "learner type" were removed from onboarding.
+
 ## Why this work
 
 The brief was a "personal specification" for each learner and a learning process tailored person to person, built on research into personality-based learning. The learner chose *each learner gets their own path* (not peer learning).

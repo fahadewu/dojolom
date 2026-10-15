@@ -40,7 +40,7 @@ export function Hero() {
           </p>
           <div className="rise flex flex-wrap items-center gap-3" style={{ "--rise-delay": "170ms" } as React.CSSProperties}>
             <Button size="lg" asChild>
-              <Link href="/start" data-testid="hero-start">
+              <Link href="/learn" data-testid="hero-start">
                 Start in two minutes
                 <ArrowRight size={18} weight="bold" />
               </Link>

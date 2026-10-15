@@ -7,7 +7,7 @@ const learn = [
   { href: "/#subjects", label: "Subjects" },
   { href: "/#how", label: "How it works" },
   { href: "/#try", label: "Try a lesson" },
-  { href: "/start", label: "Start learning" },
+  { href: "/learn", label: "Start learning" },
 ];
 
 const company = [

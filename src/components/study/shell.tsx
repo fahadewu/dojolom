@@ -116,7 +116,7 @@ export function SessionFrame({
     <StudyRoot motion={motion} largeTargets={largeTargets} largeText={largeText} tapHold={tapHold}>
       <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl">
         <div className="max-w-3xl mx-auto px-6 h-[64px] flex items-center justify-between gap-4">
-          <Link href={backHref} className="inline-flex items-center gap-2 text-[15px] font-medium text-muted-foreground hover:text-foreground rounded-full px-2 -ml-2 py-1.5">
+          <Link href={backHref} className="inline-flex items-center gap-2 whitespace-nowrap text-[15px] font-medium text-muted-foreground hover:text-foreground rounded-full px-2 -ml-2 py-1.5">
             <ArrowLeft size={16} weight="bold" />
             {backLabel}
           </Link>

@@ -195,6 +195,10 @@
 .m-flip[data-flipped="true"] { transform: rotateY(180deg); }
 .m-face { backface-visibility: hidden; }
 .m-back { transform: rotateY(180deg); }
+/* The tutor is replying: three dots rise in turn. Calm motion keeps them still. */
+.m-typing { animation: m-typing 1100ms ease-in-out infinite; animation-delay: var(--m-delay, 0ms); }
+[data-motion="calm"] .m-typing { animation: none; opacity: 0.7; }
+@keyframes m-typing { 0%, 60%, 100% { transform: none; opacity: 0.45; } 30% { transform: translateY(-4px); opacity: 1; } }
 /* Confetti pieces are plain spans in the four learning colours; they only mount for the lively profile. */
 .m-confetti { position: fixed; top: -14px; width: 10px; height: 14px; border-radius: 3px; pointer-events: none; animation: m-fall var(--dur, 1800ms) cubic-bezier(0.2, 0.6, 0.4, 1) forwards; }
 @keyframes m-fall { to { transform: translate3d(var(--dx, 0px), 105vh, 0) rotate(var(--rot, 540deg)); opacity: 0.9; } }

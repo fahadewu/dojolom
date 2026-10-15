@@ -70,7 +70,7 @@ export function Navbar() {
 
         <div className="flex items-center gap-2">
           <Button size="sm" className="hidden lg:inline-flex h-10 px-4" asChild>
-            <Link href="/start">
+            <Link href="/learn">
               Start learning
               <ArrowRight size={14} weight="bold" />
             </Link>
@@ -106,7 +106,7 @@ export function Navbar() {
               </Link>
             ))}
             <Button size="lg" className="w-full mt-4 mb-3" asChild>
-              <Link href="/start" onClick={() => setOpen(false)}>
+              <Link href="/learn" onClick={() => setOpen(false)}>
                 Start learning
                 <ArrowRight size={16} weight="bold" />
               </Link>

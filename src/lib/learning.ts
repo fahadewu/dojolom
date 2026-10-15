@@ -5,6 +5,7 @@
 import { bdSubjects, type BdGroup, type BdStageId } from "@/lib/curriculum-bd";
 import type { BdGrade } from "@/lib/personal";
 import { ageDefaults, ageFromLegacyBand, allowedPace, validAge } from "@/lib/age";
+import { cleanInterests, cleanSeeWays, isTone, type SeeWay, type TutorTone } from "@/lib/tutor/profile";
 
 export type StyleId = "visual" | "player" | "storyteller" | "watcher" | "reader" | "tinkerer";
 
@@ -285,6 +286,10 @@ export interface LearnerInput {
   answers: Record<string, StyleId>;
   study: Record<string, number>; // "how you study right now" statements, 1 to 5; optional, never asked of children (src/lib/personal.ts)
   targetGrade: BdGrade | "";     // school-book learners: the grade they are aiming for
+  // The tutor (src/lib/tutor/profile.ts): what the learner is into, the voice they chose, and how they like ideas explained.
+  interests: string[];
+  tutorTone: TutorTone | "";
+  seeWays: SeeWay[];
 }
 
 export interface LearnerProfile {
@@ -306,6 +311,9 @@ export const emptyLearner: LearnerInput = {
   answers: {},
   study: {},
   targetGrade: "",
+  interests: [],
+  tutorTone: "",
+  seeWays: [],
 };
 
 export function buildProfile(input: LearnerInput): LearnerProfile {
@@ -395,7 +403,7 @@ export function migrateLearner(raw: unknown): LearnerInput | null {
   if (!raw || typeof raw !== "object") return null;
   const l = { ...emptyLearner, ...(raw as Record<string, unknown>) } as Omit<LearnerInput, "age"> & { age: unknown };
   const age = typeof l.age === "string" ? ageFromLegacyBand(l.age, l.bdStage) : validAge(l.age) ? l.age : null;
-  const out: LearnerInput = { ...l, age };
+  const out: LearnerInput = { ...l, age, interests: cleanInterests(l.interests), tutorTone: isTone(l.tutorTone) ? l.tutorTone : "", seeWays: cleanSeeWays(l.seeWays) };
   return { ...out, pace: allowedPace(ageDefaults(out), out.pace) };
 }
 

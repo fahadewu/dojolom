@@ -128,7 +128,7 @@ export function TryLesson() {
               </div>
             )}
             <Button variant="white" size="lg" className="mt-auto w-full" asChild>
-              <Link href="/start">
+              <Link href="/learn">
                 Build my own syllabus
                 <ArrowRight size={16} weight="bold" />
               </Link>

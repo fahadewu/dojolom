@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { memoryJourney } from "../../src/lib/landing";
 import { bdSubjects } from "../../src/lib/curriculum-bd";
 
-/* End-to-end coverage of the landing page against the static export: every
+/* End-to-end coverage of the landing page against the production build: every
    section renders and answers the visitor, the numbers shown come from the
    app's own models, nothing overflows a phone, and reduced motion stops the
    page moving by itself. */
@@ -33,7 +33,7 @@ test.describe("landing page", () => {
   test("the hero starts onboarding", async ({ page }) => {
     await fresh(page);
     await page.getByTestId("hero-start").click();
-    await expect(page).toHaveURL(/\/start\/?$/);
+    await expect(page).toHaveURL(/\/learn\/?$/);
   });
 
   test("four moves: steps by itself until picked, answers clicks and arrow keys, and each preview works", async ({ page }) => {
@@ -124,7 +124,7 @@ test.describe("landing page", () => {
     await expect(page.getByTestId("cq-demo")).toContainText("pitch divided by the number of divisions");
 
     await page.getByTestId("book-list").locator("a").first().click();
-    await expect(page).toHaveURL(/\/start\/?$/);
+    await expect(page).toHaveURL(/\/learn\/?$/);
     expect(await learner(page)).toMatchObject({ track: "nctb", bdStage: "c5", subjects: [c5[0].id] });
   });
 
@@ -134,7 +134,7 @@ test.describe("landing page", () => {
     await page.getByTestId("try").getByRole("button").filter({ hasText: "On the far side of Earth from the sun" }).click();
     await expect(page.getByTestId("try")).toContainText("Yes.");
     await page.getByTestId("subjects").getByRole("link").filter({ hasText: "Money" }).first().click();
-    await expect(page).toHaveURL(/\/start\/?$/);
+    await expect(page).toHaveURL(/\/learn\/?$/);
     expect(await learner(page)).toMatchObject({ track: "everyday", subjects: ["money"] });
   });
 
@@ -150,7 +150,7 @@ test.describe("landing page", () => {
     await page.getByRole("button", { name: "Keep me posted" }).click();
     await expect(page.getByText("You're on the list", { exact: true })).toBeVisible();
     await page.getByTestId("cta-start").click();
-    await expect(page).toHaveURL(/\/start\/?$/);
+    await expect(page).toHaveURL(/\/learn\/?$/);
   });
 
   test("reduced motion: nothing moves by itself, and everything is in its final place", async ({ page }) => {

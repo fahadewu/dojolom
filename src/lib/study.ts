@@ -941,6 +941,7 @@ export interface StudyState {
   readAloud: Setting;     // auto: from measured reading, then age (src/lib/age.ts)
   largeText: Setting;
   guardianHabits?: boolean; // a parent or guardian allowed habit tuning from behaviour for an under-18
+  guardianTutor?: boolean;  // a parent or guardian agreed that an under-18 may study with the AI tutor (src/lib/age.ts tutorAccess)
   nudge: Nudge;           // the learner's push on the support ladder: more help, just right, push me
   pictures: boolean;      // illustrations in games where they exist
   when?: "morning" | "afternoon" | "evening";
@@ -1345,6 +1346,7 @@ export function setBeatClock(state: StudyState, beatClock: boolean): StudyState 
 export function setReadAloud(state: StudyState, readAloud: Setting): StudyState { return { ...state, readAloud }; }
 export function setLargeText(state: StudyState, largeText: Setting): StudyState { return { ...state, largeText }; }
 export function setGuardianHabits(state: StudyState, on: boolean): StudyState { return { ...state, guardianHabits: on || undefined }; }
+export function setGuardianTutor(state: StudyState, on: boolean): StudyState { return { ...state, guardianTutor: on || undefined }; }
 const isSetting = (v: unknown): v is Setting => v === "auto" || v === "on" || v === "off";
 export function setNudge(state: StudyState, nudge: Nudge): StudyState { return { ...state, nudge }; }
 export function setPictures(state: StudyState, pictures: boolean): StudyState { return { ...state, pictures }; }
@@ -1540,6 +1542,7 @@ export function migrateStudy(raw: unknown): StudyState {
     readAloud: isSetting(r.readAloud) ? r.readAloud : "auto",
     largeText: isSetting(r.largeText) ? r.largeText : "auto",
     guardianHabits: r.guardianHabits === true ? true : undefined,
+    guardianTutor: r.guardianTutor === true ? true : undefined,
     nudge: r.nudge === -1 || r.nudge === 1 ? r.nudge : 0,
     pictures: r.pictures !== false,
     when: r.when === "morning" || r.when === "afternoon" || r.when === "evening" ? r.when : undefined,

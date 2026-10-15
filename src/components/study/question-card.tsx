@@ -10,7 +10,7 @@ import { Listen, Spoken, stopSpeaking, useReadAloud } from "@/components/study/r
 import type { Concept, Question } from "@/content/types";
 
 /** What a card reports with an answer: time to an answer in mind, and a reading sample when the learner read it themselves. */
-export interface CardMeta { thinkMs?: number; read?: ReadSample }
+export interface CardMeta { thinkMs?: number; read?: ReadSample; picked?: string }
 
 const wordCount = (t: string) => t.split(/\s+/).filter((w) => /\w/.test(w)).length;
 
@@ -67,7 +67,7 @@ export function ChoiceQuestion({
     if (listened.current) stopSpeaking();
     const words = wordCount(promptRef.current?.textContent ?? "") + (revealed ? options.reduce((n, o) => n + wordCount(o), 0) : 0);
     const read = listened.current ? undefined : { words, ms: Math.round(at - shownAt.current) };
-    onAnswer(i === answer, sure, { thinkMs: thinkMs.current, read });
+    onAnswer(i === answer, sure, { thinkMs: thinkMs.current, read, picked: options[i] });
   }
 
   return (

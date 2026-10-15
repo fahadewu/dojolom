@@ -36,6 +36,9 @@ export function updateStudy(fn: (s: StudyState) => StudyState) {
   notify();
 }
 
+/** The study state as it stands right now, for code that runs outside render (e.g. building a request). */
+export function getStudy(): StudyState { return read(); }
+
 export function resetStudyStore() {
   cache = emptyStudy;
   saveStudy(emptyStudy);
@@ -69,10 +72,16 @@ export function useNow(): number {
 export interface LearnerBundle { learner: LearnerInput; profile: LearnerProfile }
 
 export function learnerComplete(l: LearnerInput | null): l is LearnerInput {
-  return !!l && Object.keys(l.answers).length === styleQuestions.length && l.subjects.length > 0 && validAge(l.age);
+  // Learners from before the tutor answered five scenario questions; newer ones said how they like things explained.
+  return !!l && (Object.keys(l.answers).length === styleQuestions.length || l.seeWays.length > 0) && l.subjects.length > 0 && validAge(l.age);
 }
 
 let learnerCache: LearnerBundle | null | undefined;
+let recordCache: LearnerInput | null | undefined;
+function readRecord(): LearnerInput | null {
+  if (recordCache === undefined) recordCache = loadLearner();
+  return recordCache;
+}
 function readLearner(): LearnerBundle | null {
   if (learnerCache === undefined) {
     const l = loadLearner();
@@ -82,13 +91,18 @@ function readLearner(): LearnerBundle | null {
 }
 const learnerListeners = new Set<() => void>();
 function subscribeLearner(cb: () => void) {
-  const onStorage = (e: StorageEvent) => { if (e.key === "dojolom.learner" || e.key === null) { learnerCache = undefined; cb(); } };
+  const onStorage = (e: StorageEvent) => { if (e.key === "dojolom.learner" || e.key === null) { learnerCache = undefined; recordCache = undefined; cb(); } };
   window.addEventListener("storage", onStorage);
   learnerListeners.add(cb);
   return () => { window.removeEventListener("storage", onStorage); learnerListeners.delete(cb); };
 }
 /** Forget the cached learner after this tab changes it (the wizard and settings call this on save), and re-render readers. */
-export function invalidateLearner() { learnerCache = undefined; learnerListeners.forEach((cb) => cb()); }
+export function invalidateLearner() { learnerCache = undefined; recordCache = undefined; learnerListeners.forEach((cb) => cb()); }
+
+/** Whatever learner record is saved, complete or not: the tutor gets to know a learner in conversation, a field at a time. Client only. */
+export function useLearnerRecord(): LearnerInput | null {
+  return useSyncExternalStore(subscribeLearner, readRecord, () => null);
+}
 
 /** The saved learner and their profile, or null when onboarding is incomplete. Client only. */
 export function useLearner(): LearnerBundle | null {

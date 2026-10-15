@@ -189,6 +189,21 @@ export function habitsOn(d: AgeDefaults, guardianOn: boolean | undefined): boole
   return d.habitsByDefault || guardianOn === true;
 }
 
+/**
+ * The AI tutor (docs/ai-tutor-rd.md). Open to adults. For anyone under 18 by
+ * protection age it stays closed until the deployment allows it, which waits on
+ * a legal reading of the data ordinance (s.9(3) bars profiling a specific child)
+ * and on Anthropic's safeguards for products serving minors; once allowed, a
+ * parent or guardian agrees first.
+ */
+export type TutorAccess = "open" | "guardian" | "closed";
+
+export function tutorAccess(d: AgeDefaults, guardianAgreed: boolean | undefined, minorsAllowed: boolean): TutorAccess {
+  if (!d.minor) return "open";
+  if (!minorsAllowed) return "closed";
+  return guardianAgreed ? "open" : "guardian";
+}
+
 /** Everything a screen needs: the age defaults, resolved against the learner's own settings and measured reading. */
 export interface AgeView {
   d: AgeDefaults;

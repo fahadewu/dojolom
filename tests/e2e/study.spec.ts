@@ -3,7 +3,7 @@ import mathUnit1 from "../../src/content/math/unit-1";
 import mathUnit2 from "../../src/content/math/unit-2";
 import type { Concept } from "../../src/content/types";
 
-/* End-to-end coverage of the study module against the static export.
+/* End-to-end coverage of the study module against the production build.
    Time is pinned through localStorage["dojolom.clock"], which the app's clock
    seam reads, so "tomorrow" is one assignment away. */
 
@@ -14,7 +14,8 @@ const concepts: Concept[] = [...mathUnit1.concepts, ...mathUnit2.concepts];
 const SAY = "It is what you actually see, not what you think it means.";
 
 const answers: Record<string, string> = { "new-gadget": "player", remember: "player", "free-hour": "player", stuck: "player", motivation: "player" };
-const base = { name: "Ada", age: 30, subjects: ["math"], goal: "curious", pace: "steady", answers };
+// The lesson player is for under-18s now (adults study with the tutor, tests/e2e/chat.spec.ts), so the base learner is 16.
+const base = { name: "Ada", age: 16, subjects: ["math"], goal: "curious", pace: "steady", answers };
 
 async function seed(page: Page, learner: Record<string, unknown>, clock = DAY1) {
   await page.goto("/");
@@ -380,7 +381,7 @@ test.describe("study module", () => {
     await expect(page.getByTestId("study-profile")).toBeVisible();
     await expect(page.getByTestId("guardian-habits")).toBeVisible();
     // An adult: none of it.
-    await seed(page, base);
+    await seed(page, { ...base, age: 30 });
     await page.goto("/study/settings/");
     await expect(page.getByTestId("guardian-habits")).toHaveCount(0);
   });
@@ -655,7 +656,8 @@ test.describe("study module", () => {
     await seed(page, base);
     await page.goto("/start/");
     await expect(page.getByTestId("path-card")).toHaveCount(1);
-    await expect(page.getByText("Formats you will start with")).toBeVisible();
+    await expect(page.getByTestId("profile-summary")).toContainText("Your lessons, your way in");
+    await expect(page.getByTestId("profile-summary")).toContainText("Explains with");
     await page.getByTestId("go-to-study").click();
     await expect(page).toHaveURL(/\/study\/$/);
   });

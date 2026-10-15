@@ -245,7 +245,7 @@ export function LearnSegment({
 
 /* What "Read it to me" reads: the lesson as this format shows it, then the misconception and its correction.
    Keys match the Spoken wrappers below, so the sentence being read lights up where it is shown. */
-function lessonChunks(concept: Concept, format: LearnFormat, compact: boolean): Chunk[] {
+export function lessonChunks(concept: Concept, format: LearnFormat, compact: boolean): Chunk[] {
   const steps = concept.steps.flatMap((st, i) => [{ key: `step-label-${i}`, text: st.label }, { key: `step-${i}`, text: st.text }]);
   const analogy = { key: "analogy", text: concept.analogy };
   const body: Chunk[] =
@@ -277,7 +277,7 @@ export function FormatChip({ format }: { format: LearnFormat }) {
   );
 }
 
-function FormatBody({ format, concept, compact, isKid, onAnswer }: { format: LearnFormat; concept: Concept; compact: boolean; isKid: boolean; onAnswer: (correct: boolean) => void }) {
+export function FormatBody({ format, concept, compact, isKid, onAnswer }: { format: LearnFormat; concept: Concept; compact: boolean; isKid: boolean; onAnswer: (correct: boolean) => void }) {
   if (format === "video") return <Walkthrough concept={concept} />;
   if (format === "story") return <Story concept={concept} compact={compact} />;
   if (format === "reading") return <DeepRead concept={concept} isKid={isKid} />;

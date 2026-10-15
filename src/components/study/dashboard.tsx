@@ -7,9 +7,10 @@ import { ArrowRight, ArrowCounterClockwise, Clock, GearSix, LockSimple, Plant } 
 import { Button } from "@/components/ui/button";
 import { SubjectChip } from "@/components/subject-icon";
 import { ClientGate, StudyPage, StudySkeleton } from "@/components/study/shell";
-import { ageView } from "@/lib/age";
+import { ageDefaults, ageView, tutorAccess, validAge } from "@/lib/age";
+import { MINORS_ALLOWED } from "@/lib/tutor/context";
 import { ProgressRing, StreakFlame } from "@/components/study/effects";
-import { useLearner, useNow, useReducedMotion, useStudy } from "@/lib/study-store";
+import { useLearner, useLearnerRecord, useNow, useReducedMotion, useStudy } from "@/lib/study-store";
 import { authoredUnitsFor, useConcepts } from "@/content/load";
 import { cn } from "@/lib/utils";
 import { planLine } from "@/components/study/plan";
@@ -52,7 +53,10 @@ function Dashboard() {
   const [state, update] = useStudy();
   const now = useNow();
   const reduced = useReducedMotion();
-  useEffect(() => { if (bundle === null) router.replace("/start/"); }, [bundle, router]);
+  const record = useLearnerRecord();
+  const toTutor = !!record && validAge(record.age) && tutorAccess(ageDefaults(record), state.guardianTutor, MINORS_ALLOWED) !== "closed";
+  // The tutor is the way in for anyone it is open to; this dashboard is for under-18s until it is cleared for children.
+  useEffect(() => { if (toTutor) router.replace("/learn/"); else if (bundle === null) router.replace("/start/"); }, [toTutor, bundle, router]);
 
   const learner = bundle?.learner;
   const plans = useMemo(

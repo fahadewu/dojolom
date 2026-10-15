@@ -32,7 +32,7 @@ export function Cta() {
           <h2 className="text-[2.2rem] md:text-[3rem] font-semibold leading-[1.04] tracking-[-0.035em]">Your first session takes about ten minutes</h2>
           <p className="text-lg text-white/80 leading-8">Two minutes of questions, then a path made for you. No account and nothing to install.</p>
           <Button size="lg" variant="sun" className="self-start" asChild>
-            <Link href="/start" data-testid="cta-start">
+            <Link href="/learn" data-testid="cta-start">
               Start in two minutes
               <ArrowRight size={18} weight="bold" />
             </Link>

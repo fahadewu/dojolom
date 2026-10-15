@@ -2,14 +2,29 @@
 
 A general learning platform that starts with the learner, not the lesson.
 
-1. **Tell us about you** – age (typed, not picked from bands), subjects, goal, time available.
-2. **We find how you learn** – five everyday scenarios produce a learner profile (Mapper, Player, Storyteller, Watcher, Reader, Tinkerer).
-3. **You get a personal path** – each subject broken into six units of three ideas, one short session a day.
-4. **You learn by doing** – every session rewinds what you learned before, teaches today's idea in your format, drills it with a mini-game, and ends with a quick check. The app tracks what sticks and adapts.
+Dojolom is a conversation with an AI tutor. After the landing page there is one chat window, `/learn`, that does everything:
+
+1. **It gets to know you**: your age (asked by the device itself, before any AI is involved), what you want to learn, why, how you like things explained, the voice you want it to have, and what you are into. One question at a time, mostly with tap answers.
+2. **It teaches anything, by talking it through**: it asks what you think before explaining, makes you explain the idea back, and never hands over answers you could work out. When the topic is in Dojolom's checked lessons or the Bangladesh school books, it teaches from that material.
+3. **It remembers**: everything you learn joins your memory model and comes back as a quick check just before you would forget it. Each day opens with a short review.
+
+The lesson player (the day-by-day sessions below) is the way in for under-18s until the tutor is cleared for children.
+
+## The tutor
+
+`/learn` (`src/components/chat/*`, `src/lib/tutor/*`, `src/app/api/chat/route.ts`). Evidence, design decisions, cost, what is deliberately not built and what blocks opening it to children: `docs/ai-tutor-rd.md`.
+
+- **Conversations, kept on the device.** A sidebar lists them; each new day opens a new one that starts with what is due. Conversations (`dojolom.chats`) and ideas taught outside the checked lessons (`dojolom.ideas`) live in localStorage like everything else.
+- **Grounded when possible.** Before teaching a topic the tutor searches the books, chapters and authored ideas (`src/lib/tutor/catalogue.ts`) and reads the checked lesson on the server inside the same turn. Anything else it teaches from its own knowledge under stricter accuracy rules, and saves with one multiple-choice check it writes while teaching; a learner can flag a check that looks wrong.
+- **The model never marks anything that moves a memory.** Quick checks are marked on the device against the authored item or the stored check, and recorded through the study engine (FSRS memory).
+- **Guardrails from the evidence.** Hints before answers (hint → smaller question → a similar worked example → the answer only after two tries), diagnose before explaining, one move and one question per message, lead after a miss, explain-back against the key words, no verdict changes under push-back, AI not a friend, no personal details, crisis → trusted adult, 999 and 1098.
+- **Personal, within what the evidence allows.** Interests set the story of the tutor's own examples (never the numbers or the method, never tangents); the voice (calm, coach, playful, curious) changes how it sounds, not how it teaches; the preferred explanation is where it starts, not a rule; study-habit support carries over from `src/lib/personal.ts`.
+- **Models.** `anthropic/claude-haiku-5.5` through AI Gateway; `anthropic/claude-sonnet-5.5` once an idea has been missed twice in the hour. Rules and tools are cached.
+- **Children.** Under 18 (by protection age), the device says the tutor is for adults for now and sends them to their lessons; the route refuses them too. `NEXT_PUBLIC_TUTOR_MINORS=1` opens it behind a guardian's consent; do not set it in production before the legal and safety checks in `docs/ai-tutor-rd.md`.
 
 ## The study module
 
-`/study` is where a learner actually learns, day by day.
+`/study` is the lesson player: day-by-day sessions as cards and screens, no AI. Since the tutor became the product it is the way in for under-18s; the same engine (memory, curriculum, age rules) runs behind the tutor.
 
 - **Sessions.** Each subject is a path of sessions (18 for the 5 and 15 minute paces, 6 for the long pace). A session is a fixed sequence of segments: *Rewind* (retrieval questions on ideas that are due, then a recap of last time), *Learn*, *Play* (one of four mini-games mixing today's idea with earlier ones), *Quick check*, and *Done*. The last session of a unit ends with a mixed **checkpoint** instead.
 - **Learn by doing.** Every Learn is a loop of *Guess* (the common misconception, true or false), *Try* (a go at the example problem before it is explained; not under 12, where instruction-first works better, not for an idea that opens a chapter or after a wrong guess or shaky answers, and not in the 5-minute pace), *See* (today's idea as an infographic, guided walkthrough, story, deep read or try-it challenge, then the misconception named and corrected) and *Say* (the idea said back before the key points appear: typed for a friend with live feedback on the key terms used, or rebuilt from chips with two decoys; under-10s get chips, so does anyone who skips the typing twice, and chips are one tap away for everyone). Guesses and teach-backs are logged as signals but never count against the sitting or the idea's memory. Once an idea is holding, rewind questions hide their options until the learner says they have an answer in mind. After the quick check and on the finish screen, one line reports how confidence matched outcome. The evidence and design notes are in `docs/learning-mechanics-rd.md`.
@@ -22,14 +37,16 @@ A general learning platform that starts with the learner, not the lesson.
 - **Tuned to how you study.** An optional "how you study right now" step (eight statements; never asked under 12) and, above all, what the learner actually does tune the *support* around lessons, never what is taught: an if-then study plan for low follow-through (re-asked after a lapse, with a "start small" prompt), a calmer frame before tests and warmer feedback after misses for test nerves, early wins and progress against one's own past for low confidence, and "Go deeper" plus more format exploration for the curious. Behaviour outweighs the answers within two weeks. Evidence and design notes: `docs/personality-learning-rd.md` (`src/lib/personal.ts`).
 - **Habit.** One session per subject per calendar day, with an explicit override capped at two. Streaks allow one rest day a week and a broken streak is shown as a fresh start, never as a lost count; the long pace shows sessions per week instead. Learners can say when they will study, write a one-line summary that is replayed in tomorrow's rewind, and export or import their progress as JSON.
 
-Everything is client-side: the site is a static export and all state lives in `localStorage` (`dojolom.learner`, `dojolom.study`). Setting `dojolom.clock` to a millisecond timestamp pins "now", which the tests use to move between days.
+All learner state is client-side, in `localStorage` (`dojolom.learner`, `dojolom.study`, `dojolom.chats`, `dojolom.ideas`). The only server code is the tutor's route, which stores nothing. Setting `dojolom.clock` to a millisecond timestamp pins "now", which the tests use to move between days.
 
 ## Structure
 
 - `src/app/page.tsx` – landing page; the hero is the first onboarding question.
 - `src/app/start/page.tsx` – the onboarding wizard and the profile + path results view.
 - `src/app/study/**` – dashboard, per-subject path, session player, catch-up review and settings (thin route files over `src/components/study/*`).
-- `src/lib/learning.ts` – subjects, learning styles, questionnaire and profile scoring.
+- `src/lib/learning.ts` – subjects, the learner record, and the legacy style scoring that ranks lesson formats.
+- `src/app/learn/page.tsx`, `src/components/chat/*` – the chat app: conversations, the age intake, cards.
+- `src/lib/tutor/*` – the tutor: what the learner shapes (`profile.ts`), the per-turn context and its schema (`context.ts`), the tools (`tools.ts`), the instructions (`brief.ts`), the agent and models (`agent.ts`, server only), the catalogue search and lesson reader (`catalogue.ts`, server only), conversations (`threads.ts`), ideas taught outside the checked lessons (`ideas.ts`) and the scripted model the end-to-end tests use (`script-model.ts`).
 - `src/lib/study.ts` – the pure study engine: plan builder, memory scheduling and grading, behaviour signals, adaptation, session builder (including mastery correctives), reducers and persistence. `src/lib/memory.ts` is the FSRS-6 memory model and the personal forgetting calibration. `src/lib/clock.ts` is the injectable clock.
 - `src/lib/study-store.ts` – the browser store (useSyncExternalStore, storage-event sync) and learner hooks.
 - `src/components/study/games/*` – the five mini-games (match pairs, put it in order, true or false, fill the gap, spot it), all keyboard operable and seeded, never random. `src/lib/spot.ts` builds the Spot it round.
@@ -41,8 +58,11 @@ Everything is client-side: the site is a static export and all state lives in `l
 
 ```bash
 npm install
+echo "AI_GATEWAY_API_KEY=..." > .env.local   # or link the Vercel project, which authenticates with OIDC
 npm run dev
 ```
+
+Without a key the chat shows that the tutor could not reply (with a retry); the landing page and the lesson player work as before. `DOJOLOM_TUTOR_SCRIPT=1` runs the tutor on a scripted model with no AI calls.
 
 ### Illustrations
 
@@ -57,13 +77,13 @@ node scripts/gen-visuals.mjs --check                            # every manifest
 
 `GEMINI_API_KEY` or `OPENAI_API_KEY` work in place of the gateway key; `VISUALS_MODEL` picks the model. Ten images per idea (the idea, five pair terms, four sequence steps), resized to 512 px WebP under `public/visuals/<conceptId>/`, recorded in `src/content/visuals.json`. Re-running fills gaps only; delete a file to regenerate it. Commit the files and the manifest together.
 
-`npm run build` produces a static export in `out/`. For a GitHub project site (`user.github.io/repo`), build with `NEXT_PUBLIC_BASE_PATH=/repo`; `public/.nojekyll` is included so Pages serves the `_next/` folder.
+The site needs a server for the tutor's route, so it deploys to Vercel (or any Node host running `next start`), no longer as a static export. `NEXT_PUBLIC_BASE_PATH` still mounts it under a sub-path.
 
 ## Test
 
 ```bash
 npm test            # vitest: engine (scheduler, adaptation, streaks, gate, persistence, a 40-day simulation) and content validation
-npm run test:e2e    # builds the export, serves it, and runs Playwright through onboarding, sessions, rewinds, games, settings
+npm run test:e2e    # builds, runs next start, and drives Playwright through the chat (scripted model), the lesson player, onboarding, rewinds, games, settings
 npm run test:all    # lint, typecheck, unit, e2e
 ```
 

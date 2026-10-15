@@ -84,7 +84,7 @@ export function Books() {
               return (
                 <li key={b.id} className="move-enter" style={{ "--m-delay": `${Math.min(i, 8) * 35}ms` } as React.CSSProperties}>
                   <Link
-                    href="/start"
+                    href="/learn"
                     onClick={() => startWith(b.id, b.groups?.[0])}
                     className="group surface rounded-2xl p-4 flex gap-3.5 h-full transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-raised)]"
                   >
@@ -159,7 +159,7 @@ function CreativeQuestion() {
         Learners answer each part, then mark themselves against the model answer, and the summary names the part to practise next.
       </p>
       <Button variant="outline" className="self-start" asChild>
-        <Link href="/start">Choose my class</Link>
+        <Link href="/learn">Choose my class</Link>
       </Button>
     </aside>
   );

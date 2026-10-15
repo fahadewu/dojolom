@@ -71,7 +71,7 @@ export default function Home() {
             lede="Twelve everyday subjects, from fractions to French to how money works, each in six units that build on each other."
             action={
               <Button variant="outline" asChild>
-                <Link href="/start">Build my path <ArrowRight size={16} weight="bold" /></Link>
+                <Link href="/learn">Build my path <ArrowRight size={16} weight="bold" /></Link>
               </Button>
             }
           />
@@ -79,7 +79,7 @@ export default function Home() {
             {subjects.map((s) => (
               <Link
                 key={s.id}
-                href="/start"
+                href="/learn"
                 onClick={() => {
                   const existing = loadLearner() ?? emptyLearner;
                   saveLearner({ ...existing, track: "everyday", subjects: [s.id] });
