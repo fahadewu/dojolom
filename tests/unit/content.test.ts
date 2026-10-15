@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { contentIndex } from "@/content/index";
 import { validateUnit } from "@/content/validate";
-import { subjects } from "@/lib/learning";
+import { everydaySubjects, subjects } from "@/lib/learning";
 import { UNITS_PER_SUBJECT } from "@/lib/study";
 
 const keys = Object.keys(contentIndex);
@@ -45,8 +45,8 @@ describe("authored content", () => {
 });
 
 describe("coverage", () => {
-  it("every subject has all six units", () => {
-    const missing = subjects.flatMap((s) => Array.from({ length: UNITS_PER_SUBJECT }, (_, i) => `${s.id}-${i + 1}`)).filter((k) => !keys.includes(k));
+  it("every everyday subject has all six units", () => {
+    const missing = everydaySubjects.flatMap((s) => Array.from({ length: UNITS_PER_SUBJECT }, (_, i) => `${s.id}-${i + 1}`)).filter((k) => !keys.includes(k));
     expect(missing, `missing units: ${missing.join(", ")}`).toEqual([]);
   });
 });

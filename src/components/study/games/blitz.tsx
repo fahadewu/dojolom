@@ -30,6 +30,7 @@ export default function BlitzGame({ concepts, support, seed, motion, largeTarget
   const [bestStreak, setBestStreak] = useState(0);
   const [remaining, setRemaining] = useState(1); // 0..1 of the timer
   const [finished, setFinished] = useState(false);
+  const [drag, setDrag] = useState<{ x: number; dx: number; id: number } | null>(null); // a swipe in progress
   const completed = useRef(false);
 
   const item = items[index];
@@ -74,6 +75,28 @@ export default function BlitzGame({ concepts, support, seed, motion, largeTarget
     return () => window.removeEventListener("keydown", onKey);
   }, [answered, finished, settle]);
 
+  // Swipe: drag the card right for true, left for false. Past the threshold on release it settles; short of it, it springs back.
+  const SWIPE = 90;
+  function dragStart(e: React.PointerEvent) {
+    if (answered || e.button !== 0) return;
+    // A press on the buttons is a tap, never the start of a swipe: capturing it would swallow the click.
+    if ((e.target as HTMLElement).closest("button, a, input")) return;
+    setDrag({ x: e.clientX, dx: 0, id: e.pointerId });
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  }
+  function dragMove(e: React.PointerEvent) {
+    if (!drag || drag.id !== e.pointerId) return;
+    setDrag({ ...drag, dx: e.clientX - drag.x });
+  }
+  function dragEnd(e: React.PointerEvent) {
+    if (!drag || drag.id !== e.pointerId) return;
+    const dx = drag.dx;
+    setDrag(null);
+    if (Math.abs(dx) >= SWIPE) settle(dx > 0);
+  }
+  const dx = drag?.dx ?? 0;
+  const lean = Math.abs(dx) >= SWIPE ? (dx > 0 ? "true" : "false") : null;
+
   function next() {
     if (index + 1 >= items.length) {
       setFinished(true);
@@ -115,13 +138,31 @@ export default function BlitzGame({ concepts, support, seed, motion, largeTarget
         )}
       </div>
 
-      <div key={index} className="surface rounded-[28px] p-6 md:p-8 flex flex-col gap-6 m-enter">
+      {/* The entrance animation lives on the wrapper so its final transform never overrides the swipe. */}
+      <div key={index} className="m-enter">
+      <div
+        data-testid="blitz-card"
+        data-lean={lean ?? undefined}
+        className={cn("surface rounded-[28px] p-6 md:p-8 flex flex-col gap-6 select-none", !answered && "touch-pan-y cursor-grab", drag && "cursor-grabbing")}
+        style={drag ? { transform: `translateX(${dx}px) rotate(${dx / 24}deg)`, transition: "none" } : { transition: motion === "calm" ? "none" : "transform 220ms var(--m-ease, ease-out)" }}
+        onPointerDown={dragStart}
+        onPointerMove={dragMove}
+        onPointerUp={dragEnd}
+        onPointerCancel={dragEnd}
+      >
+        {!answered && (
+          <div aria-hidden className="pointer-events-none -mb-3 flex h-5 justify-between text-xs font-semibold uppercase tracking-wide">
+            <span className={cn("rounded-full px-2 py-0.5 transition-opacity", lean === "false" ? "bg-ember-soft text-ember" : "text-muted-foreground/60", dx < -20 ? "opacity-100" : "opacity-0")}>← False</span>
+            <span className={cn("rounded-full px-2 py-0.5 transition-opacity", lean === "true" ? "bg-sprout-soft text-sprout" : "text-muted-foreground/60", dx > 20 ? "opacity-100" : "opacity-0")}>True →</span>
+          </div>
+        )}
         {seconds !== null && !answered && (
           <div className="h-1.5 rounded-full bg-muted overflow-hidden" aria-hidden>
             <span className="block h-full rounded-full bg-focus" style={{ width: `${remaining * 100}%` }} />
           </div>
         )}
         <p className="font-display text-2xl font-semibold leading-snug" data-testid="statement">{item.statement}</p>
+        {!answered && !isKid && index === 0 && <p className="text-sm text-muted-foreground -mt-3">Tap a button, press T or F, or swipe the card: right for true, left for false.</p>}
         <div className="flex gap-3">
           {[true, false].map((call) => {
             const chosen = picked === call;
@@ -165,6 +206,7 @@ export default function BlitzGame({ concepts, support, seed, motion, largeTarget
             <Button onClick={next} data-testid="next">{index + 1 >= items.length ? "Finish" : "Next"}</Button>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

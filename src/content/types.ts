@@ -28,6 +28,25 @@ export interface Concept {
   order: { prompt: string; items: string[] };     // exactly 4 items in the correct sequence
   blitz: { statement: string; truth: boolean; why: string }[]; // exactly 4, balanced true/false
   blanks: { sentence: string; options: string[]; answer: number }[]; // exactly 2; sentence contains "___"
+  terms?: string[];     // optional, 2 to 8: the words a good explanation of the idea would use; defaults to the pair terms
+  sayPrompt?: string;   // optional: how the teach-back asks for the idea, e.g. "Tell a friend why a fair test changes one thing"
+  glossary?: { term: string; bn: string }[]; // curriculum books: 2 to 8 key words with the Bangla term students meet in Bangla-medium books
+}
+
+/** One part of a board-style creative question, with the answer a marker would accept. */
+export interface CqPart { q: string; a: string }
+
+/**
+ * The SSC/HSC creative question (সৃজনশীল প্রশ্ন): a scenario (উদ্দীপক) and four parts
+ * of rising demand, marked 1, 2, 3 and 4. Curriculum units carry one, practised
+ * after the unit checkpoint.
+ */
+export interface CreativeQuestion {
+  stem: string;          // the scenario: a short real situation, table or worked setup, 2 to 6 sentences
+  knowledge: CqPart;     // ক (1 mark): recall a definition or fact
+  comprehension: CqPart; // খ (2 marks): explain why or how
+  application: CqPart;   // গ (3 marks): use the idea on the scenario, often a calculation
+  higherOrder: CqPart;   // ঘ (4 marks): analyse, compare or judge, with reasons
 }
 
 export interface UnitContent {
@@ -36,6 +55,8 @@ export interface UnitContent {
   title: string;     // must equal Subject.units[unit - 1]
   summary: string;   // one sentence: what the learner can do after this unit
   concepts: Concept[]; // exactly 3, ordered easiest to hardest
+  titleBn?: string;  // curriculum books: the chapter title in Bangla
+  cq?: CreativeQuestion; // curriculum books: one board-style creative question on the chapter
 }
 
 export type SubjectContent = UnitContent[]; // exactly 6 units, in order

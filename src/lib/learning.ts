@@ -2,6 +2,10 @@
 // Everything the onboarding flow and the personalised syllabus are built from.
 // Plain data + small pure functions, so it can later be swapped for an API.
 
+import { bdSubjects, type BdGroup, type BdStageId } from "@/lib/curriculum-bd";
+import type { BdGrade } from "@/lib/personal";
+import { ageDefaults, ageFromLegacyBand, allowedPace, validAge } from "@/lib/age";
+
 export type StyleId = "visual" | "player" | "storyteller" | "watcher" | "reader" | "tinkerer";
 
 export type FormatId = "infographic" | "game" | "video" | "story" | "reading" | "challenge";
@@ -88,10 +92,17 @@ export interface Subject {
   name: string;
   emoji: string;
   blurb: string;
-  units: string[]; // ordered beginner → confident
+  units: string[]; // ordered beginner → confident; for a curriculum book, its chapters in textbook order
+  // Curriculum books (Bangladesh, NCTB) only:
+  curriculum?: "nctb";
+  stage?: BdStageId;
+  groups?: BdGroup[];  // absent: every group studies it
+  nameBn?: string;
+  unitsBn?: string[];  // chapter titles in Bangla, same order as units
+  kind?: string;       // the everyday subject whose icon and colour it borrows
 }
 
-export const subjects: Subject[] = [
+export const everydaySubjects: Subject[] = [
   {
     id: "languages",
     name: "Languages",
@@ -178,16 +189,10 @@ export const subjects: Subject[] = [
   },
 ];
 
+/** Every subject the app can teach: the everyday ones, then the Bangladesh national curriculum books. */
+export const subjects: Subject[] = [...everydaySubjects, ...bdSubjects];
+
 // ─── Questionnaire ───────────────────────────────────────────────────────────
-
-export const ageGroups = [
-  { id: "kid", label: "Under 12", hint: "Short, playful, lots of pictures" },
-  { id: "teen", label: "12 to 17", hint: "Fast-paced with real challenges" },
-  { id: "adult", label: "18 to 40", hint: "Practical and to the point" },
-  { id: "senior", label: "40 and over", hint: "Calm pace, clear text" },
-] as const;
-
-export type AgeGroupId = (typeof ageGroups)[number]["id"];
 
 export const goals = [
   { id: "curious", label: "Just curious", hint: "Learn for the joy of it" },
@@ -270,11 +275,16 @@ export const styleQuestions: StyleQuestion[] = [
 
 export interface LearnerInput {
   name: string;
-  age: AgeGroupId | "";
+  age: number | null;        // years, typed by the learner (or whoever sets it up for them); src/lib/age.ts
+  track: "everyday" | "nctb"; // everyday subjects, or the Bangladesh national curriculum
+  bdStage: BdStageId | "";    // class, when the track is nctb
+  bdGroup: BdGroup | "";      // Science, Humanities or Business Studies, from Class 9
   subjects: string[];
   goal: GoalId | "";
   pace: PaceId | "";
   answers: Record<string, StyleId>;
+  study: Record<string, number>; // "how you study right now" statements, 1 to 5; optional, never asked of children (src/lib/personal.ts)
+  targetGrade: BdGrade | "";     // school-book learners: the grade they are aiming for
 }
 
 export interface LearnerProfile {
@@ -286,11 +296,16 @@ export interface LearnerProfile {
 
 export const emptyLearner: LearnerInput = {
   name: "",
-  age: "",
+  age: null,
+  track: "everyday",
+  bdStage: "",
+  bdGroup: "",
   subjects: [],
   goal: "",
   pace: "",
   answers: {},
+  study: {},
+  targetGrade: "",
 };
 
 export function buildProfile(input: LearnerInput): LearnerProfile {
@@ -299,10 +314,7 @@ export function buildProfile(input: LearnerInput): LearnerProfile {
   };
   for (const style of Object.values(input.answers)) scores[style] += 2;
 
-  // Gentle age priors: younger learners tend toward play and story, older toward reading.
-  if (input.age === "kid") { scores.player += 1; scores.storyteller += 1; }
-  if (input.age === "teen") { scores.player += 1; scores.watcher += 1; }
-  if (input.age === "senior") { scores.reader += 1; scores.watcher += 1; }
+  // No age priors: nothing shows that age-matched formats help (docs/age-learning-rd.md). Age changes support, not format.
   if (input.goal === "work") scores.tinkerer += 1;
   if (input.goal === "school") scores.reader += 1;
 
@@ -375,10 +387,22 @@ export function saveLearner(input: LearnerInput) {
   try { localStorage.setItem(KEY, JSON.stringify(input)); } catch {}
 }
 
+/**
+ * A saved learner made current. An age band from before ages were typed ("kid", "teen", "adult", "senior") becomes a
+ * representative age the learner can change in settings, and a pace their age no longer offers becomes the longest that it does.
+ */
+export function migrateLearner(raw: unknown): LearnerInput | null {
+  if (!raw || typeof raw !== "object") return null;
+  const l = { ...emptyLearner, ...(raw as Record<string, unknown>) } as Omit<LearnerInput, "age"> & { age: unknown };
+  const age = typeof l.age === "string" ? ageFromLegacyBand(l.age, l.bdStage) : validAge(l.age) ? l.age : null;
+  const out: LearnerInput = { ...l, age };
+  return { ...out, pace: allowedPace(ageDefaults(out), out.pace) };
+}
+
 export function loadLearner(): LearnerInput | null {
   try {
     const raw = localStorage.getItem(KEY);
-    return raw ? { ...emptyLearner, ...JSON.parse(raw) } : null;
+    return raw ? migrateLearner(JSON.parse(raw)) : null;
   } catch { return null; }
 }
 

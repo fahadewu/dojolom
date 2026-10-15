@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { contentIndex } from "./index";
 import type { Concept, UnitContent } from "./types";
-import { parseConceptId, UNITS_PER_SUBJECT } from "@/lib/study";
+import { parseConceptId, unitsIn } from "@/lib/study";
 
 const cache = new Map<string, Promise<UnitContent>>();
 
@@ -17,7 +17,7 @@ export function isAuthored(subject: string, unit: number) {
 
 export function authoredUnitsFor(subject: string): number[] {
   const out: number[] = [];
-  for (let u = 1; u <= UNITS_PER_SUBJECT; u++) if (isAuthored(subject, u)) out.push(u);
+  for (let u = 1; u <= unitsIn(subject); u++) if (isAuthored(subject, u)) out.push(u);
   return out;
 }
 
@@ -88,4 +88,15 @@ export function useConcepts(ids: string[]): Loaded<Record<string, Concept>> {
 
 export function useSubjectUnits(subject: string): Loaded<UnitContent[]> {
   return useLoader(subject, loadSubject);
+}
+
+const loadUnitByKey = (key: string) => {
+  if (!key) return Promise.resolve(null);
+  const [subject, unit] = splitKey(key);
+  return loadUnit(subject, unit);
+};
+
+/** One unit (e.g. for its creative question). An empty subject loads nothing. */
+export function useUnit(subject: string, unit: number): Loaded<UnitContent | null> {
+  return useLoader(subject ? unitKey(subject, unit) : "", loadUnitByKey);
 }

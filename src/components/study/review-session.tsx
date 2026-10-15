@@ -7,11 +7,15 @@ import { ArrowRight, ArrowCounterClockwise } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { SubjectChip } from "@/components/subject-icon";
 import { ClientGate, SessionFrame, StudySkeleton } from "@/components/study/shell";
+import { LoadError } from "@/components/study/load-error";
 import { ReviewItemCard } from "@/components/study/question-card";
 import { Kicker } from "@/components/study/segments/learn";
 import { useLearner, useNow, useReducedMotion, useStudy } from "@/lib/study-store";
 import { authoredUnitsFor, useConcepts } from "@/content/load";
-import { answered, buildPlan, buildReviewSession, completeReview, effectiveToday, motionFor, parseConceptId, seedFor, subjectById, type ReviewItem } from "@/lib/study";
+import { answered, buildPlan, buildReviewSession, completeReview, effectiveToday, guessRate, motionFor, parseConceptId, seedFor, subjectById, tuningOf, type ReviewItem, thinkFirst } from "@/lib/study";
+import { TuningProvider } from "@/components/study/tuning";
+import { ReadAloudProvider } from "@/components/study/read-aloud";
+import { ageView } from "@/lib/age";
 
 export function ReviewSession() {
   return (
@@ -38,7 +42,7 @@ function Review() {
   );
   const items = sitting?.items ?? null;
   const startedAt = sitting?.startedAt ?? now;
-  const { data: concepts } = useConcepts((items ?? []).map((i) => i.conceptId));
+  const { data: concepts, error: loadFailed } = useConcepts((items ?? []).map((i) => i.conceptId));
   const [step, setStep] = useState(0);
   const [answeredNow, setAnswered] = useState(false);
   const [correct, setCorrect] = useState(0);
@@ -46,14 +50,19 @@ function Review() {
 
   if (!bundle || !learner || items === null) return <StudySkeleton bare />;
   const motion = motionFor(learner, bundle.profile, state.motion, reduced);
-  const largeTargets = learner.age === "kid" || learner.age === "senior";
+  const age = ageView(learner, state);
   const list = items.filter((i) => concepts?.[i.conceptId]);
   const item = list[step];
 
+  const tuning = tuningOf(learner, state, effectiveToday(state, now));
   const frame = (children: React.ReactNode) => (
-    <SessionFrame motion={motion} largeTargets={largeTargets} backHref="/study/" aside={<span className="text-sm font-semibold text-muted-foreground">Catch-up review</span>}>
-      {children}
-    </SessionFrame>
+    <TuningProvider value={tuning}>
+      <ReadAloudProvider value={{ on: age.readAloud, autoQuestions: age.readAloud && age.d.autoReadQuestions, rate: age.d.stage === "early" ? 0.85 : 1 }}>
+        <SessionFrame motion={motion} largeTargets={age.largeTargets} largeText={age.largeText} tapHold={age.d.tapHold} backHref="/study/" aside={<span className="text-sm font-semibold text-muted-foreground">Catch-up review</span>}>
+          {children}
+        </SessionFrame>
+      </ReadAloudProvider>
+    </TuningProvider>
   );
 
   if (items.length === 0) {
@@ -65,6 +74,7 @@ function Review() {
       </div>,
     );
   }
+  if (loadFailed) return frame(<LoadError what="The review" />);
   if (!concepts) return <StudySkeleton bare />;
 
   if (finished || !item) {
@@ -89,14 +99,16 @@ function Review() {
       <div className="surface rounded-[28px] p-6 md:p-8">
         <ReviewItemCard
           item={item}
+          thinkFirst={thinkFirst(state.memory[item.conceptId], state.memoryScale)}
           concept={concept}
           seed={seedFor("review", startedAt, step)}
-          confidence={learner.age !== "kid"}
-          largeTargets={largeTargets}
-          onAnswer={(c, conf) => {
+          confidence={age.d.confidence}
+          largeTargets={age.largeTargets}
+          onAnswer={(c, conf, meta) => {
             setAnswered(true);
             if (c) setCorrect((n) => n + 1);
-            update((s) => answered(s, subj?.id ?? "review", item.conceptId, c, now, { source: "review", confidence: conf, item }));
+            const guess = guessRate(item.source, item.source === "quiz" ? concept.quiz[item.index % concept.quiz.length]?.options.length : undefined);
+            update((s) => answered(s, subj?.id ?? "review", item.conceptId, c, now, { source: "review", confidence: conf, item, thinkMs: meta?.thinkMs, guess, read: meta?.read }));
           }}
         />
       </div>

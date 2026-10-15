@@ -6,17 +6,22 @@ import { Button } from "@/components/ui/button";
 import { SubjectChip } from "@/components/subject-icon";
 import { ReviewItemCard } from "@/components/study/question-card";
 import { Kicker, StepsGrid } from "@/components/study/segments/learn";
-import { parseConceptId, subjectById, type Confidence, type ReviewItem, type Segment } from "@/lib/study";
+import { guessRate, parseConceptId, retryItem, subjectById, thinkFirst, type Confidence, type MemoryState, type ReadSample, type ReviewItem, type Segment } from "@/lib/study";
 import type { Concept } from "@/content/types";
 
 type RewindSeg = Extract<Segment, { kind: "rewind" }>;
 
 /* Ask first, then show: retrieval questions on what is due, then the recap of
    last time as feedback. The learner's own one-line summary from yesterday is
-   replayed beside the key idea. */
+   replayed beside the key idea. A miss earns one second go at the end, on the
+   same idea from another angle (successive relearning: retrieve until right
+   once); an idea missed twice joins the recap so it is restudied, not just
+   marked wrong. */
 export function RewindSegment({
   segment,
   concepts,
+  memory,
+  memoryScale = 1,
   said,
   seed,
   confidence,
@@ -26,14 +31,19 @@ export function RewindSegment({
 }: {
   segment: RewindSeg;
   concepts: Record<string, Concept>;
+  memory: Record<string, MemoryState>;
+  memoryScale?: number;
   said: Record<string, string>;
   seed: number;
   confidence: boolean;
   largeTargets: boolean;
-  onAnswer: (item: ReviewItem, correct: boolean, confidence: Confidence) => void;
+  onAnswer: (item: ReviewItem, correct: boolean, confidence: Confidence, thinkMs?: number, guess?: number, read?: ReadSample) => void;
   onDone: () => void;
 }) {
-  const items = segment.items.filter((it) => concepts[it.conceptId]);
+  const first = segment.items.filter((it) => concepts[it.conceptId]);
+  const [retries, setRetries] = useState<ReviewItem[]>([]);
+  const [stillMissed, setStillMissed] = useState<string[]>([]);
+  const items = [...first, ...retries];
   const [step, setStep] = useState(0);
   const [answered, setAnswered] = useState(false);
   const [showAgain, setShowAgain] = useState<string | null>(null);
@@ -42,17 +52,25 @@ export function RewindSegment({
   if (item) {
     const concept = concepts[item.conceptId];
     const subj = subjectById(parseConceptId(item.conceptId).subject);
+    const isRetry = step >= first.length;
+    const answer = (c: boolean, conf: Confidence, thinkMs?: number, read?: ReadSample) => {
+      setAnswered(true);
+      onAnswer(item, c, conf, thinkMs, guessRate(item.source, item.source === "quiz" ? concept.quiz[item.index % concept.quiz.length]?.options.length : undefined), read);
+      if (c) return;
+      if (!isRetry && !retries.some((r) => r.conceptId === item.conceptId)) setRetries((r) => [...r, retryItem(item, memory[item.conceptId])]);
+      if (isRetry && !stillMissed.includes(item.conceptId)) setStillMissed((m) => [...m, item.conceptId]);
+    };
     return (
       <section data-testid="segment-rewind" data-step={step} className="flex flex-col gap-6 m-enter" key={step}>
         <div className="flex items-center justify-between gap-4">
           <Kicker>
-            <span className="inline-flex items-center gap-2 text-play">
-              <ArrowCounterClockwise size={16} weight="bold" /> Rewind {step + 1} of {items.length}
+            <span className="inline-flex items-center gap-2 text-play" data-retry={isRetry || undefined}>
+              <ArrowCounterClockwise size={16} weight="bold" /> {isRetry ? "Second go, another angle" : `Rewind ${step + 1} of ${first.length}`}
             </span>
           </Kicker>
           <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
             {subj && <SubjectChip id={subj.id} size="sm" />}
-            <span className="font-semibold">{item.crossSubject && subj ? `${subj.name} · ` : ""}{concept.title}</span>
+            <span className="font-semibold" data-testid="rewind-title">{item.crossSubject && subj ? `${subj.name} · ` : ""}{concept.title}</span>
           </span>
         </div>
         <div className="surface rounded-[28px] p-6 md:p-8">
@@ -62,7 +80,8 @@ export function RewindSegment({
             seed={seed + step}
             confidence={confidence}
             largeTargets={largeTargets}
-            onAnswer={(c, conf) => { setAnswered(true); onAnswer(item, c, conf); }}
+            thinkFirst={!isRetry && thinkFirst(memory[item.conceptId], memoryScale)}
+            onAnswer={(c, conf, meta) => answer(c, conf, meta?.thinkMs, meta?.read)}
           />
         </div>
         {answered && (
@@ -77,16 +96,16 @@ export function RewindSegment({
     );
   }
 
-  const recaps = segment.recapIds.map((id) => concepts[id]).filter(Boolean);
+  const recaps = [...new Set([...segment.recapIds, ...stillMissed])].map((id) => concepts[id]).filter(Boolean);
   return (
     <section data-testid="segment-rewind" data-step="recap" className="flex flex-col gap-6 m-enter">
       <Kicker>
         <span className="inline-flex items-center gap-2 text-play">
-          <ArrowCounterClockwise size={16} weight="bold" /> Last time
+          <ArrowCounterClockwise size={16} weight="bold" /> {stillMissed.some((id) => !segment.recapIds.includes(id)) ? "Look again" : "Last time"}
         </span>
       </Kicker>
       <h1 className="text-[2rem] md:text-[2.5rem] font-semibold leading-[1.1]">
-        {recaps.length === 1 ? recaps[0].title : "What you learned last time"}
+        {recaps.length === 1 ? recaps[0].title : stillMissed.some((id) => !segment.recapIds.includes(id)) ? "Worth another look" : "What you learned last time"}
       </h1>
       <div className="flex flex-col gap-4">
         {recaps.map((c) => (

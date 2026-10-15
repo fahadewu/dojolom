@@ -6,6 +6,20 @@ export type UnitKey = `${string}-${number}`;
 export type UnitLoader = () => Promise<{ default: UnitContent }>;
 
 export const contentIndex: Record<string, UnitLoader> = {
+  "bd-c5-math-1": () => import("./bd-c5-math/unit-1"),
+  "bd-c6-science-1": () => import("./bd-c6-science/unit-1"),
+  "bd-c8-math-1": () => import("./bd-c8-math/unit-1"),
+  "bd-hsc-physics1-1": () => import("./bd-hsc-physics1/unit-1"),
+  "bd-ssc-accounting-1": () => import("./bd-ssc-accounting/unit-1"),
+  "bd-ssc-bgs-1": () => import("./bd-ssc-bgs/unit-1"),
+  "bd-ssc-biology-1": () => import("./bd-ssc-biology/unit-1"),
+  "bd-ssc-chemistry-1": () => import("./bd-ssc-chemistry/unit-1"),
+  "bd-ssc-english2-1": () => import("./bd-ssc-english2/unit-1"),
+  "bd-ssc-highermath-1": () => import("./bd-ssc-highermath/unit-1"),
+  "bd-ssc-ict-1": () => import("./bd-ssc-ict/unit-1"),
+  "bd-ssc-math-1": () => import("./bd-ssc-math/unit-1"),
+  "bd-ssc-physics-1": () => import("./bd-ssc-physics/unit-1"),
+  "bd-ssc-science-1": () => import("./bd-ssc-science/unit-1"),
   "languages-1": () => import("./languages/unit-1"),
   "languages-2": () => import("./languages/unit-2"),
   "languages-3": () => import("./languages/unit-3"),

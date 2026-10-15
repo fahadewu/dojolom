@@ -1,14 +1,24 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Check, X } from "@phosphor-icons/react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { mulberry32, shuffle, type Confidence, type ReviewItem } from "@/lib/study";
+import { mulberry32, shuffle, type Confidence, type ReadSample, type ReviewItem } from "@/lib/study";
+import { useTuning } from "@/components/study/tuning";
+import { Listen, Spoken, stopSpeaking, useReadAloud } from "@/components/study/read-aloud";
 import type { Concept, Question } from "@/content/types";
+
+/** What a card reports with an answer: time to an answer in mind, and a reading sample when the learner read it themselves. */
+export interface CardMeta { thinkMs?: number; read?: ReadSample }
+
+const wordCount = (t: string) => t.split(/\s+/).filter((w) => /\w/.test(w)).length;
 
 /* One multiple-choice question. Options are shuffled deterministically from the
    seed, the first tap is the answer, and the explanation is always shown so a
-   wrong answer becomes the moment the idea gets filed properly. */
+   wrong answer becomes the moment the idea gets filed properly. With thinkFirst
+   the options stay hidden until the learner says they have an answer in mind,
+   so the memory is produced before it is recognised. */
 export function ChoiceQuestion({
   prompt,
   options,
@@ -17,6 +27,7 @@ export function ChoiceQuestion({
   seed,
   confidence = false,
   largeTargets = false,
+  thinkFirst = false,
   kicker,
   onAnswer,
 }: {
@@ -27,24 +38,52 @@ export function ChoiceQuestion({
   seed: number;
   confidence?: boolean;
   largeTargets?: boolean;
+  thinkFirst?: boolean;
   kicker?: React.ReactNode;
-  onAnswer: (correct: boolean, confidence: Confidence) => void;
+  onAnswer: (correct: boolean, confidence: Confidence, meta?: CardMeta) => void;
 }) {
   const order = useMemo(() => shuffle(options.map((_, i) => i), mulberry32(seed)), [options, seed]);
   const [picked, setPicked] = useState<number | null>(null);
   const [sure, setSure] = useState<Confidence>("sure");
+  const [revealed, setRevealed] = useState(!thinkFirst);
+  const { steadyNerves } = useTuning();
+  const { autoQuestions } = useReadAloud();
+  const uid = useId();
+  const promptRef = useRef<HTMLParagraphElement>(null);
+  const listened = useRef(false); // read to them: the answer time says nothing about their reading
+  const shownAt = useRef(0);
+  const thinkMs = useRef<number | undefined>(undefined);
+  useEffect(() => { shownAt.current = performance.now(); }, []);
   const answered = picked !== null;
 
-  function choose(i: number) {
+  function reveal() {
+    thinkMs.current = Math.round(performance.now() - shownAt.current);
+    setRevealed(true);
+  }
+
+  function choose(i: number, at: number) {
     if (answered) return;
     setPicked(i);
-    onAnswer(i === answer, sure);
+    if (listened.current) stopSpeaking();
+    const words = wordCount(promptRef.current?.textContent ?? "") + (revealed ? options.reduce((n, o) => n + wordCount(o), 0) : 0);
+    const read = listened.current ? undefined : { words, ms: Math.round(at - shownAt.current) };
+    onAnswer(i === answer, sure, { thinkMs: thinkMs.current, read });
   }
 
   return (
     <div className="flex flex-col gap-5" data-testid="question" data-answered={answered}>
       {kicker}
-      <p className="font-display text-xl md:text-2xl font-semibold leading-snug">{prompt}</p>
+      <p ref={promptRef} className="font-display text-xl md:text-2xl font-semibold leading-snug">{typeof prompt === "string" ? <Spoken k={`${uid}q`} text={prompt} /> : prompt}</p>
+      {!answered && (
+        <Listen
+          auto={autoQuestions}
+          onPlay={() => { listened.current = true; }}
+          chunks={() => [
+            { key: `${uid}q`, text: promptRef.current?.textContent ?? "" },
+            ...(revealed ? order.map((i) => ({ key: `${uid}o${i}`, text: options[i] })) : []),
+          ]}
+        />
+      )}
       {confidence && !answered && (
         <div className="flex items-center gap-2" role="radiogroup" aria-label="How sure are you?">
           <span className="text-sm text-muted-foreground mr-1">Before you answer:</span>
@@ -66,7 +105,13 @@ export function ChoiceQuestion({
           ))}
         </div>
       )}
-      <div className="grid gap-2.5">
+      {!revealed && (
+        <div className="flex flex-col gap-3 rounded-2xl border border-dashed border-focus/40 bg-focus-soft/40 p-5" data-testid="think-first">
+          <p className="text-[15px] leading-7"><span className="font-semibold">Answer in your head first.</span> Pulling it out of memory is what makes it stick. The options only check.</p>
+          <Button variant="outline" className="self-start" onClick={reveal} data-testid="think-reveal">I have an answer in mind</Button>
+        </div>
+      )}
+      {revealed && <div className="grid gap-2.5">
         {order.map((i) => {
           const correct = i === answer;
           const selected = picked === i;
@@ -78,7 +123,7 @@ export function ChoiceQuestion({
               data-testid="choice"
               data-correct={correct}
               data-state={!answered ? "idle" : correct ? "correct" : selected ? "wrong" : "muted"}
-              onClick={() => choose(i)}
+              onClick={(e) => choose(i, e.timeStamp)}
               className={cn(
                 "tap text-left rounded-2xl border px-5 py-3.5 text-[16px] font-medium transition-colors flex items-center justify-between gap-3",
                 largeTargets && "text-[17px]",
@@ -88,18 +133,18 @@ export function ChoiceQuestion({
                 answered && !correct && !selected && "border-border text-muted-foreground/70"
               )}
             >
-              {options[i]}
+              <span><Spoken k={`${uid}o${i}`} text={options[i]} /></span>
               {answered && correct && <Check size={18} weight="bold" />}
               {answered && selected && !correct && <X size={18} weight="bold" className="text-ember" />}
             </button>
           );
         })}
-      </div>
+      </div>}
       <div aria-live="polite">
         {answered && (
           <div className="m-enter rounded-2xl bg-muted/80 p-5 text-[15px] leading-7" data-testid="why">
             <p>
-              <span className="font-semibold">{picked === answer ? "Right. " : "Not quite. "}</span>
+              <span className="font-semibold">{picked === answer ? "Right. " : steadyNerves ? "Not yet, and that is useful: now we know what to bring back. " : "Not quite. "}</span>
               {why}
             </p>
           </div>
@@ -124,7 +169,7 @@ export function TrueFalseQuestion({
   confidence?: boolean;
   largeTargets?: boolean;
   kicker?: React.ReactNode;
-  onAnswer: (correct: boolean, confidence: Confidence) => void;
+  onAnswer: (correct: boolean, confidence: Confidence, meta?: CardMeta) => void;
 }) {
   return (
     <ChoiceQuestion
@@ -162,6 +207,7 @@ export function ReviewItemCard({
   seed,
   confidence,
   largeTargets,
+  thinkFirst = false,
   kicker,
   onAnswer,
 }: {
@@ -170,12 +216,13 @@ export function ReviewItemCard({
   seed: number;
   confidence: boolean;
   largeTargets: boolean;
+  thinkFirst?: boolean; // hide the options until the learner has an answer in mind (not for true/false, where there is nothing to hide)
   kicker?: React.ReactNode;
-  onAnswer: (correct: boolean, confidence: Confidence) => void;
+  onAnswer: (correct: boolean, confidence: Confidence, meta?: CardMeta) => void;
 }) {
   if (item.source === "quiz") {
     const q: Question = concept.quiz[item.index % concept.quiz.length];
-    return <ChoiceQuestion prompt={q.question} options={q.options} answer={q.answer} why={q.why} seed={seed} confidence={confidence} largeTargets={largeTargets} kicker={kicker} onAnswer={onAnswer} />;
+    return <ChoiceQuestion prompt={q.question} options={q.options} answer={q.answer} why={q.why} seed={seed} confidence={confidence} largeTargets={largeTargets} thinkFirst={thinkFirst} kicker={kicker} onAnswer={onAnswer} />;
   }
   if (item.source === "blitz") {
     const b = concept.blitz[item.index % concept.blitz.length];
@@ -192,6 +239,7 @@ export function ReviewItemCard({
         seed={seed}
         confidence={confidence}
         largeTargets={largeTargets}
+        thinkFirst={thinkFirst}
         kicker={kicker}
         onAnswer={onAnswer}
       />
@@ -211,6 +259,7 @@ export function ReviewItemCard({
       seed={seed}
       confidence={confidence}
       largeTargets={largeTargets}
+      thinkFirst={thinkFirst}
       kicker={kicker}
       onAnswer={onAnswer}
     />

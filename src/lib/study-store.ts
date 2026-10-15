@@ -5,6 +5,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { buildProfile, loadLearner, styleQuestions, type LearnerInput, type LearnerProfile } from "@/lib/learning";
 import { emptyStudy, expireStale, loadStudy, saveStudy, STUDY_KEY, touch, type StudyState } from "@/lib/study";
 import { nowMs } from "@/lib/clock";
+import { validAge } from "@/lib/age";
 
 let cache: StudyState | null = null;
 const listeners = new Set<() => void>();
@@ -68,7 +69,7 @@ export function useNow(): number {
 export interface LearnerBundle { learner: LearnerInput; profile: LearnerProfile }
 
 export function learnerComplete(l: LearnerInput | null): l is LearnerInput {
-  return !!l && Object.keys(l.answers).length === styleQuestions.length && l.subjects.length > 0 && l.age !== "";
+  return !!l && Object.keys(l.answers).length === styleQuestions.length && l.subjects.length > 0 && validAge(l.age);
 }
 
 let learnerCache: LearnerBundle | null | undefined;
@@ -79,13 +80,15 @@ function readLearner(): LearnerBundle | null {
   }
   return learnerCache;
 }
+const learnerListeners = new Set<() => void>();
 function subscribeLearner(cb: () => void) {
   const onStorage = (e: StorageEvent) => { if (e.key === "dojolom.learner" || e.key === null) { learnerCache = undefined; cb(); } };
   window.addEventListener("storage", onStorage);
-  return () => window.removeEventListener("storage", onStorage);
+  learnerListeners.add(cb);
+  return () => { window.removeEventListener("storage", onStorage); learnerListeners.delete(cb); };
 }
-/** Forget the cached learner after this tab changes it (the wizard calls this on save). */
-export function invalidateLearner() { learnerCache = undefined; }
+/** Forget the cached learner after this tab changes it (the wizard and settings call this on save), and re-render readers. */
+export function invalidateLearner() { learnerCache = undefined; learnerListeners.forEach((cb) => cb()); }
 
 /** The saved learner and their profile, or null when onboarding is incomplete. Client only. */
 export function useLearner(): LearnerBundle | null {

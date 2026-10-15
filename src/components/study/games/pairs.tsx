@@ -5,6 +5,7 @@ import { Check } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { tint } from "@/lib/tint";
 import { games, mulberry32, shuffle } from "@/lib/study";
+import { pairVisuals, visualUrl, type Visual } from "@/lib/visuals";
 import type { Concept } from "@/content/types";
 import type { GameProps } from "./types";
 
@@ -12,48 +13,58 @@ import type { GameProps } from "./types";
 // A grid of shuffled tiles: one carries a term, another its meaning. Tap two.
 // A pair locks in the game colour; a miss is a brief coral flash and both
 // tiles clear. Every second tap is one judgement the engine can score.
+// With pictures on and every pair illustrated, the meaning tile is the picture
+// and the meaning is written under it once matched (from the start at the most
+// supportive rung). The picture's accessible name is the meaning, so a screen
+// reader plays the word game.
 
-interface Pair { id: string; conceptId: string; term: string; match: string }
-interface Tile { id: string; pairId: string; conceptId: string; side: "term" | "match"; text: string }
+interface Pair { id: string; conceptId: string; term: string; match: string; visual: Visual | null }
+interface Tile { id: string; pairId: string; conceptId: string; side: "term" | "match"; text: string; visual: Visual | null }
 
 const FLASH_MS = 320;
 const colour = tint[games.pairs.colour];
 
 /** Up to five pairs from today's concept; a sixth, when asked for, borrows the first pair of the next concept. */
-function pickPairs(concepts: Concept[], count: number): Pair[] {
+export function pickPairs(concepts: Concept[], count: number, pictures: boolean): Pair[] {
   const [today, earlier] = concepts;
+  const vis = pictures ? pairVisuals(today) : [];
   const pairs: Pair[] = today.pairs.slice(0, Math.min(count, 5)).map((p, i) => ({
     id: `${today.id}:${i}`,
     conceptId: today.id,
     term: p.term,
     match: p.match,
+    visual: vis[i] ?? null,
   }));
   if (count > pairs.length && earlier?.pairs[0]) {
     const p = earlier.pairs[0];
-    pairs.push({ id: `${earlier.id}:0`, conceptId: earlier.id, term: p.term, match: p.match });
+    pairs.push({ id: `${earlier.id}:0`, conceptId: earlier.id, term: p.term, match: p.match, visual: pictures ? pairVisuals(earlier)[0] ?? null : null });
   }
+  // A round is pictured only when every pair in it is, so the grid reads as one thing.
+  if (!pairs.every((p) => p.visual)) for (const p of pairs) p.visual = null;
   return pairs;
 }
 
 function buildTiles(pairs: Pair[], seed: number): Tile[] {
   const tiles = pairs.flatMap<Tile>((p) => [
-    { id: `${p.id}:term`, pairId: p.id, conceptId: p.conceptId, side: "term", text: p.term },
-    { id: `${p.id}:match`, pairId: p.id, conceptId: p.conceptId, side: "match", text: p.match },
+    { id: `${p.id}:term`, pairId: p.id, conceptId: p.conceptId, side: "term", text: p.term, visual: null },
+    { id: `${p.id}:match`, pairId: p.id, conceptId: p.conceptId, side: "match", text: p.match, visual: p.visual },
   ]);
   return shuffle(tiles, mulberry32(seed));
 }
 
 export default function PairsGame(props: GameProps) {
   // A new seed, pair count or concept set is a new round; keying resets every piece of state.
-  const roundKey = `${props.seed}:${props.support.pairsCount}:${props.concepts.map((c) => c.id).join(",")}`;
+  const roundKey = `${props.seed}:${props.support.pairsCount}:${props.pictures}:${props.concepts.map((c) => c.id).join(",")}`;
   return <PairsRound key={roundKey} {...props} />;
 }
 
-function PairsRound({ concepts, support, seed, motion, largeTargets, onAnswer, onComplete }: GameProps) {
+function PairsRound({ concepts, support, seed, motion, largeTargets, pictures, onAnswer, onComplete }: GameProps) {
   const { pairs, tiles } = useMemo(() => {
-    const picked = pickPairs(concepts, support.pairsCount);
+    const picked = pickPairs(concepts, support.pairsCount, pictures);
     return { pairs: picked, tiles: buildTiles(picked, seed) };
-  }, [concepts, support.pairsCount, seed]);
+  }, [concepts, support.pairsCount, seed, pictures]);
+  const pictured = pairs.length > 0 && pairs.every((p) => p.visual);
+  const captions = support.rung === 0; // most support: the meaning is written under the picture from the start
   const byId = useMemo(() => new Map(tiles.map((t) => [t.id, t])), [tiles]);
   const total = pairs.length;
 
@@ -105,9 +116,9 @@ function PairsRound({ concepts, support, seed, motion, largeTargets, onAnswer, o
   }
 
   return (
-    <div data-testid="game-pairs" className="flex flex-col gap-5">
+    <div data-testid="game-pairs" data-pictured={pictured} className="flex flex-col gap-5">
       <div className="flex flex-col gap-1.5">
-        <p className="text-[15px] leading-6">{games.pairs.blurb} Tap a term, then the meaning that goes with it.</p>
+        <p className="text-[15px] leading-6">{games.pairs.blurb} Tap a term, then the {pictured ? "picture" : "meaning"} that goes with it.</p>
         <p className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground tabular-nums">
           <span>{matched.size} of {total} matched</span>
           <span aria-hidden>·</span>
@@ -126,6 +137,7 @@ function PairsRound({ concepts, support, seed, motion, largeTargets, onAnswer, o
               <button
                 type="button"
                 data-testid="tile"
+                data-say={tile.text}
                 data-state={state}
                 data-side={tile.side}
                 aria-pressed={selected === tile.id}
@@ -133,7 +145,8 @@ function PairsRound({ concepts, support, seed, motion, largeTargets, onAnswer, o
                 disabled={isMatched}
                 onClick={() => tap(tile)}
                 className={cn(
-                  "tap flex min-h-16 w-full items-center justify-center gap-2 rounded-2xl border bg-card px-4 py-3 text-center leading-snug shadow-[var(--shadow-hairline)] transition-[border-color,box-shadow,background-color,color] duration-200",
+                  "tap flex min-h-16 w-full items-center justify-center gap-2 rounded-2xl border bg-card text-center leading-snug shadow-[var(--shadow-hairline)] transition-[border-color,box-shadow,background-color,color] duration-200",
+                  tile.visual ? "flex-col overflow-hidden p-2" : "px-4 py-3",
                   tile.side === "term" ? "text-[16px] font-semibold" : "text-[15px]",
                   largeTargets && "min-h-[72px] text-[17px]",
                   state === "idle" && "border-input hover:border-foreground/35",
@@ -142,8 +155,25 @@ function PairsRound({ concepts, support, seed, motion, largeTargets, onAnswer, o
                   state === "matched" && cn(colour.chip, colour.border, motion === "lively" && "m-pop"),
                 )}
               >
-                {isMatched && <Check size={16} weight="bold" className="shrink-0" aria-hidden />}
-                <span>{tile.text}</span>
+                {tile.visual ? (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={visualUrl(tile.visual.src)}
+                      alt=""
+                      width={tile.visual.w}
+                      height={tile.visual.h}
+                      draggable={false}
+                      className={cn("aspect-square w-full rounded-xl object-cover bg-muted", state === "matched" && "opacity-90")}
+                    />
+                    {(isMatched || captions) && <span className="px-1 pb-1 text-[13px] leading-snug">{isMatched && <Check size={14} weight="bold" className="inline shrink-0 mr-1 -mt-0.5" aria-hidden />}{tile.text}</span>}
+                  </>
+                ) : (
+                  <>
+                    {isMatched && <Check size={16} weight="bold" className="shrink-0" aria-hidden />}
+                    <span>{tile.text}</span>
+                  </>
+                )}
               </button>
             </div>
           );

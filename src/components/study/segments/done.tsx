@@ -6,10 +6,12 @@ import { ArrowRight, ArrowCounterClockwise, BookOpen, GameController, SealCheck,
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Confetti, CountUp, SecuredChip, StreakFlame } from "@/components/study/effects";
+import { CalibrationNote } from "@/components/study/segments/check";
 import { Kicker } from "@/components/study/segments/learn";
+import { CueChips } from "@/components/study/plan";
 import { cn } from "@/lib/utils";
 import { tint } from "@/lib/tint";
-import type { MotionProfile, Segment, StreakInfo, StudyState } from "@/lib/study";
+import { SAID_MAX, type MotionProfile, type Segment, type StreakInfo, type StudyState } from "@/lib/study";
 import type { Concept } from "@/content/types";
 
 export interface DoneSummary {
@@ -21,6 +23,8 @@ export interface DoneSummary {
   day: number;
   totalDays: number;
   minutes: number;
+  note: string | null; // calibration feedback for the sitting
+  progress: { week: number; total: number }; // ideas learned in the last seven days, and in all: progress against the learner's own past
 }
 
 /* First session only: what a sitting looks like, so the shape is never a surprise. */
@@ -46,7 +50,7 @@ export function IntroSegment({ segments, estMinutes, onDone }: { segments: Segme
           const l = label[s.kind];
           const t = tint[l.colour];
           const text = s.kind === "rewind" ? "A few quick questions on what you learned before, then a recap."
-            : s.kind === "learn" ? "Today's idea in the format that suits you. Guess first, then see it laid out."
+            : s.kind === "learn" ? "Today's idea in the format that suits you. Guess first, have a go at a problem, see it laid out, then say it back in your own words."
             : s.kind === "play" ? "A short game that mixes today's idea with earlier ones."
             : s.kind === "check" ? "Two or three questions to see what stuck."
             : "A mixed quiz that closes the unit.";
@@ -77,12 +81,16 @@ export function DoneSegment({
   next,
   streakInfo,
   motion,
-  isKid,
+  noTyping,
+  streakCount = true,
   when,
+  cue,
+  replan,
   said,
   deepPace,
   onSaid,
   onWhen,
+  onCue,
 }: {
   summary: DoneSummary;
   subject: string;
@@ -91,15 +99,22 @@ export function DoneSegment({
   next: Concept | undefined;
   streakInfo: StreakInfo;
   motion: MotionProfile;
-  isKid: boolean;
+  noTyping: boolean;     // under about 10: no typed one-line summary
+  streakCount?: boolean; // under 8: sessions this week, never a day-streak count
   when: StudyState["when"];
+  cue: string | undefined;
+  replan: boolean; // follow-through has been low and a day was missed: ask for a plan again, more firmly
   said: Record<string, string>;
   deepPace: boolean;
   onSaid: (conceptId: string, text: string) => void;
   onWhen: (when: NonNullable<StudyState["when"]>) => void;
+  onCue: (cue: string) => void;
 }) {
+  const [planOpen] = useState(() => !when || !cue || replan);
   const [text, setText] = useState(todays[0] ? said[todays[0].id] ?? "" : "");
+  const [editing, setEditing] = useState(false);
   const finishedPath = summary.day >= summary.totalDays;
+  const weekly = deepPace || !streakCount;
   const celebrate = motion === "lively" || summary.checkpointPassed === true || finishedPath;
 
   return (
@@ -118,10 +133,18 @@ export function DoneSegment({
       <div className="grid sm:grid-cols-3 gap-3">
         <Stat label="Answers right" colour="sprout"><CountUp value={summary.correct} motion={motion} /><span className="text-muted-foreground text-lg font-medium"> / {summary.asked}</span></Stat>
         <Stat label="Ideas secured today" colour="sun"><CountUp value={summary.securedNow.length} motion={motion} /></Stat>
-        <Stat label={deepPace ? "Sessions this week" : "Day streak"} colour="play"><CountUp value={deepPace ? streakInfo.thisWeek : streakInfo.current} motion={motion} /></Stat>
+        <Stat label={weekly ? "Sessions this week" : "Day streak"} colour="play"><CountUp value={weekly ? streakInfo.thisWeek : streakInfo.current} motion={motion} /></Stat>
       </div>
 
-      {!deepPace && <StreakFlame count={streakInfo.current} active={streakInfo.activeToday} rest={streakInfo.restUsed} motion={motion} className="self-start" />}
+      {!weekly && <StreakFlame count={streakInfo.current} active={streakInfo.activeToday} rest={streakInfo.restUsed} motion={motion} className="self-start" />}
+
+      {summary.progress.total > 1 && (
+        <p className="text-[15px] text-muted-foreground" data-testid="progress-line">
+          {summary.progress.week === summary.progress.total
+            ? `${summary.progress.total} ideas learned so far, all of them this week.`
+            : `${summary.progress.week} ${summary.progress.week === 1 ? "idea" : "ideas"} learned this week, ${summary.progress.total} in all. The only comparison that counts is with last week's you.`}
+        </p>
+      )}
 
       {summary.securedNow.length > 0 && (
         <div className="flex flex-wrap gap-2">
@@ -139,33 +162,55 @@ export function DoneSegment({
         </div>
       )}
 
-      {!isKid && todays[0] && (
-        <div className="surface rounded-[24px] p-6 flex flex-col gap-3" data-testid="say-it">
-          <label className="flex flex-col gap-2">
-            <span className="font-semibold">In your own words, one line: what is {todays[0].title.charAt(0).toLowerCase() + todays[0].title.slice(1)}?</span>
-            <span className="text-[15px] text-muted-foreground">Optional. Tomorrow&apos;s rewind will show it back to you. Nobody else sees it.</span>
-            <Textarea
-              value={text}
-              maxLength={140}
-              rows={2}
-              placeholder="It is…"
-              onChange={(e) => setText(e.target.value)}
-              onBlur={() => onSaid(todays[0].id, text)}
-              data-testid="say-it-input"
-            />
-          </label>
-        </div>
+      {summary.note && <CalibrationNote note={summary.note} />}
+
+      {!noTyping && todays[0] && (
+        said[todays[0].id] && !editing ? (
+          <div className="surface rounded-[24px] p-6 flex flex-col gap-2" data-testid="said-back">
+            <p className="text-sm font-semibold text-muted-foreground">In your words</p>
+            <p className="text-[17px] leading-7">“{said[todays[0].id]}”</p>
+            <p className="text-[15px] text-muted-foreground">Tomorrow&apos;s rewind shows this back to you. Nobody else sees it.</p>
+            <button type="button" className="self-start text-[15px] font-semibold text-focus hover:underline underline-offset-4" onClick={() => setEditing(true)} data-testid="said-edit">Edit</button>
+          </div>
+        ) : (
+          <div className="surface rounded-[24px] p-6 flex flex-col gap-3" data-testid="say-it">
+            <label className="flex flex-col gap-2">
+              <span className="font-semibold">In your own words, one line: what is {todays[0].title.charAt(0).toLowerCase() + todays[0].title.slice(1)}?</span>
+              <span className="text-[15px] text-muted-foreground">Optional. Tomorrow&apos;s rewind will show it back to you. Nobody else sees it.</span>
+              <Textarea
+                value={text}
+                maxLength={SAID_MAX}
+                rows={2}
+                placeholder="It is…"
+                onChange={(e) => setText(e.target.value)}
+                onBlur={() => { onSaid(todays[0].id, text); if (text.trim()) setEditing(false); }}
+                data-testid="say-it-input"
+              />
+            </label>
+          </div>
+        )
       )}
 
-      {!when && !finishedPath && (
-        <div className="surface rounded-[24px] p-6 flex flex-col gap-3" data-testid="plan-when">
-          <p className="font-semibold">When will you do {deepPace ? "your next session" : "tomorrow's session"}?</p>
-          <p className="text-[15px] text-muted-foreground">People who pick a time are about twice as likely to show up.</p>
-          <div className="flex flex-wrap gap-2 mt-1">
+      {planOpen && !finishedPath && (
+        <div className={cn("rounded-[24px] p-6 flex flex-col gap-4", replan ? "bg-sun-soft/70" : "surface")} data-testid="plan-when">
+          <div className="flex flex-col gap-1">
+            <p className="font-semibold">{replan ? "Let's make the plan easier to keep." : `When will you do ${deepPace ? "your next session" : "tomorrow's session"}?`}</p>
+            <p className="text-[15px] text-muted-foreground">
+              {replan
+                ? "Missing days is normal. Tie the session to something you already do every day, and it starts to happen on its own."
+                : "Tie it to something you already do every day. Plans with a cue are kept far more often than good intentions."}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
             {(["morning", "afternoon", "evening"] as const).map((w) => (
-              <Button key={w} variant="outline" onClick={() => onWhen(w)} className="capitalize" data-testid={`when-${w}`}>{w}</Button>
+              <Button key={w} variant={when === w ? "default" : "outline"} onClick={() => onWhen(w)} className="capitalize" data-testid={`when-${w}`}>{w}</Button>
             ))}
           </div>
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-semibold text-muted-foreground">Right after…</p>
+            <CueChips value={cue} onChange={onCue} />
+          </div>
+          {cue && <p className="text-[15px] font-semibold" data-testid="plan-line">After {cue}, I do one session of Dojolom.</p>}
         </div>
       )}
 

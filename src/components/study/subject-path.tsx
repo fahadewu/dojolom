@@ -7,12 +7,14 @@ import { ArrowRight, Check, LockSimple, Plant, ArrowCounterClockwise } from "@ph
 import { Button } from "@/components/ui/button";
 import { SubjectChip, subjectTint } from "@/components/subject-icon";
 import { ClientGate, StudyPage, StudySkeleton } from "@/components/study/shell";
+import { ageView } from "@/lib/age";
+import { LoadError } from "@/components/study/load-error";
 import { ProgressRing } from "@/components/study/effects";
 import { useLearner, useNow, useReducedMotion, useStudy } from "@/lib/study-store";
 import { authoredUnitsFor, conceptFrom, useSubjectUnits } from "@/content/load";
 import { cn } from "@/lib/utils";
 import { tint } from "@/lib/tint";
-import { buildPlan, dayStatus, effectiveToday, isSecured, learnedIds, motionFor, securedCount, strength, subjectById, unitConceptIds, UNITS_PER_SUBJECT } from "@/lib/study";
+import { buildPlan, dayStatus, effectiveToday, isSecured, learnedIds, motionFor, reconcilePlan, securedCount, strength, subjectById, unitConceptIds } from "@/lib/study";
 
 export function SubjectPath({ subject }: { subject: string }) {
   return (
@@ -25,19 +27,22 @@ export function SubjectPath({ subject }: { subject: string }) {
 function Path({ subject }: { subject: string }) {
   const router = useRouter();
   const bundle = useLearner();
-  const [state] = useStudy();
+  const [state, update] = useStudy();
   const now = useNow();
   const reduced = useReducedMotion();
-  const { data: units } = useSubjectUnits(subject);
+  const { data: units, error: unitsFailed } = useSubjectUnits(subject);
   useEffect(() => { if (bundle === null) router.replace("/start/"); }, [bundle, router]);
 
   const learner = bundle?.learner;
   const plan = useMemo(() => buildPlan(subject, learner?.pace ?? "", authoredUnitsFor(subject)), [subject, learner?.pace]);
+  useEffect(() => { update((s) => reconcilePlan(s, plan)); }, [plan, update]);
   const info = subjectById(subject);
   if (!bundle || !learner || !info) return <StudySkeleton />;
 
   const motion = motionFor(learner, bundle.profile, state.motion, reduced);
-  const largeTargets = learner.age === "kid" || learner.age === "senior";
+  const age = ageView(learner, state);
+  const largeTargets = age.largeTargets;
+  if (unitsFailed) return <StudyPage motion={motion} largeTargets={largeTargets} largeText={age.largeText} wide={false}><LoadError what="This path" /></StudyPage>;
   const today = effectiveToday(state, now);
   const progress = state.subjects[subject];
   const status = dayStatus(plan, progress, today);
@@ -48,7 +53,7 @@ function Path({ subject }: { subject: string }) {
   const nextDay = "day" in status ? status.day : null;
 
   return (
-    <StudyPage motion={motion} largeTargets={largeTargets} wide={false}>
+    <StudyPage motion={motion} largeTargets={largeTargets} largeText={age.largeText} wide={false}>
       <Link href="/study/" className="inline-flex items-center gap-2 text-[15px] font-medium text-muted-foreground hover:text-foreground -mb-6">
         <ArrowCounterClockwise size={16} weight="bold" className="rotate-45" /> My study
       </Link>
@@ -69,7 +74,7 @@ function Path({ subject }: { subject: string }) {
       </header>
 
       <ol className="flex flex-col gap-8" data-testid="path">
-        {Array.from({ length: UNITS_PER_SUBJECT }, (_, i) => i + 1).map((unit) => {
+        {Array.from({ length: info.units.length }, (_, i) => i + 1).map((unit) => {
           const authored = plan.authoredUnits.includes(unit);
           const days = plan.days.filter((d) => d.unit === unit);
           const cp = progress?.checkpoints[unit];
@@ -103,10 +108,10 @@ function Path({ subject }: { subject: string }) {
                           {isDone && (
                             <div className="mt-2 flex gap-1.5" aria-label="Memory strength">
                               {d.conceptIds.map((id) => {
-                                const s = strength(state.memory[id], today);
+                                const s = strength(state.memory[id], today, state.memoryScale);
                                 return (
                                   <span key={id} className="h-1.5 w-16 rounded-full bg-muted overflow-hidden" title={`${Math.round(s * 100)}% held`}>
-                                    <span className={cn("block h-full rounded-full", isSecured(state.memory[id]) ? "bg-sprout" : "bg-sun")} style={{ width: `${Math.round(s * 100)}%` }} />
+                                    <span className={cn("block h-full rounded-full", isSecured(state.memory[id], state.memoryScale) ? "bg-sprout" : "bg-sun")} style={{ width: `${Math.round(s * 100)}%` }} />
                                   </span>
                                 );
                               })}
@@ -124,7 +129,7 @@ function Path({ subject }: { subject: string }) {
                   })}
                 </ul>
               )}
-              {authored && unitConceptIds(subject, unit).every((id) => isSecured(state.memory[id])) && (
+              {authored && unitConceptIds(subject, unit).every((id) => isSecured(state.memory[id], state.memoryScale)) && (
                 <p className="text-sm font-semibold text-sprout inline-flex items-center gap-1.5"><Plant size={14} weight="bold" /> All three ideas in this unit are held.</p>
               )}
             </li>

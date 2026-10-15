@@ -14,6 +14,14 @@ export function nowMs(): number {
 
 export type DayKey = string; // "YYYY-MM-DD" in the learner's local time
 
+/** A well-formed local day key that maps to a real date. */
+export function isDayKey(v: unknown): v is DayKey {
+  if (typeof v !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+  const [y, m, d] = v.split("-").map(Number);
+  const date = new Date(y, m - 1, d, 12);
+  return date.getFullYear() === y && date.getMonth() === m - 1 && date.getDate() === d;
+}
+
 const pad = (n: number) => String(n).padStart(2, "0");
 
 export function dayKey(ms: number): DayKey {

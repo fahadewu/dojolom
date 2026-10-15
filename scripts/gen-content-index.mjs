@@ -9,7 +9,7 @@ for (const subject of readdirSync(root).sort()) {
   const dir = join(root, subject);
   if (!statSync(dir).isDirectory()) continue;
   for (const f of readdirSync(dir).sort()) {
-    const m = f.match(/^unit-(\d)\.ts$/);
+    const m = f.match(/^unit-(\d+)\.ts$/);
     if (m) entries.push({ subject, unit: Number(m[1]) });
   }
 }

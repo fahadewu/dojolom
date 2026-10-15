@@ -3,6 +3,7 @@ import { GithubLogo, XLogo, DiscordLogo } from "@phosphor-icons/react/dist/ssr";
 import { Logo } from "@/components/logo";
 
 const learn = [
+  { href: "/#books", label: "School books" },
   { href: "/#subjects", label: "Subjects" },
   { href: "/#how", label: "How it works" },
   { href: "/#try", label: "Try a lesson" },

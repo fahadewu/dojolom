@@ -6,10 +6,11 @@ import type { GameSupport, MotionProfile } from "@/lib/study";
    one or two earlier ones for interleaving) and records what comes back. */
 export interface GameProps {
   concepts: Concept[];          // never empty; concepts[0] is today's
-  support: GameSupport;         // scaffolding level: pair count, timer, pre-placed item
+  support: GameSupport;         // scaffolding level: pair count, timer, pre-placed item, typed gaps
   seed: number;                 // all shuffles must come from mulberry32(seed), never Math.random
   motion: MotionProfile;
   largeTargets: boolean;        // kids and seniors: 56px minimum tap targets
+  pictures: boolean;            // use the content illustrations where the manifest has them; words otherwise
   /** One call per atomic judgement the learner makes, so the engine can score the concept. */
   onAnswer: (conceptId: string, correct: boolean) => void;
   /** Exactly once, when the round ends. score 0..100, accuracy 0..1. */

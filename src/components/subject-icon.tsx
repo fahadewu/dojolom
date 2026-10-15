@@ -14,7 +14,7 @@ import {
   Books,
 } from "@phosphor-icons/react/dist/ssr";
 import type { IconProps } from "@phosphor-icons/react";
-import { subjects } from "@/lib/learning";
+import { everydaySubjects, subjects } from "@/lib/learning";
 import { tint, tintAt, type Tint } from "@/lib/tint";
 import { cn } from "@/lib/utils";
 
@@ -33,17 +33,20 @@ const icons: Record<string, React.ComponentType<IconProps>> = {
   world: GlobeHemisphereWest,
 };
 
+/* A curriculum book borrows the icon and colour of the everyday subject it belongs to (Physics looks like Science). */
+const baseOf = (id: string) => subjects.find((s) => s.id === id)?.kind ?? id;
+
 export function subjectTint(id: string): Tint {
-  const i = subjects.findIndex((s) => s.id === id);
+  const i = everydaySubjects.findIndex((s) => s.id === baseOf(id));
   return tintAt(i < 0 ? 0 : i);
 }
 
 export function subjectIdByName(name: string): string {
-  return subjects.find((s) => s.name.toLowerCase() === name.toLowerCase())?.id ?? "thinking";
+  return everydaySubjects.find((s) => s.name.toLowerCase() === name.toLowerCase())?.id ?? "thinking";
 }
 
 export function SubjectIcon({ id, ...props }: { id: string } & IconProps) {
-  const Icon = icons[id] ?? Books;
+  const Icon = icons[baseOf(id)] ?? Books;
   return <Icon weight="duotone" {...props} />;
 }
 

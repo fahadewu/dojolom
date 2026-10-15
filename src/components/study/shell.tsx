@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "@phosphor-icons/react";
 import { Navbar } from "@/components/navbar";
@@ -31,23 +32,37 @@ export function StudySkeleton({ bare = false }: { bare?: boolean }) {
 }
 
 /* The root of every study screen. data-motion tunes every animation inside;
-   data-tap enlarges tap targets for kids and seniors. */
+   data-tap enlarges tap targets (children, 60+, or anyone with large text);
+   data-text scales the page for large text. With tapHold, a second tap within
+   300 ms is dropped: young children's taps often land on the screen that
+   replaced the one they meant (src/lib/age.ts). */
 export function StudyRoot({
   motion,
   largeTargets,
+  largeText = false,
+  tapHold = false,
   children,
   className,
 }: {
   motion: MotionProfile;
   largeTargets: boolean;
+  largeText?: boolean;
+  tapHold?: boolean;
   children: React.ReactNode;
   className?: string;
 }) {
+  const lastTap = useRef(-Infinity); // event timestamps count from page load, so a first tap must never look recent
   return (
     <div
       data-motion={motion}
       data-tap={largeTargets ? "large" : "normal"}
-      className={cn("min-h-screen bg-background text-foreground flex flex-col", largeTargets && "text-[17px]", className)}
+      data-text={largeText ? "large" : "normal"}
+      onClickCapture={tapHold ? (e) => {
+        const t = e.timeStamp;
+        if (t - lastTap.current < 300) { e.preventDefault(); e.stopPropagation(); return; }
+        lastTap.current = t;
+      } : undefined}
+      className={cn("min-h-screen bg-background text-foreground flex flex-col", className)}
     >
       {children}
     </div>
@@ -58,16 +73,18 @@ export function StudyRoot({
 export function StudyPage({
   motion,
   largeTargets,
+  largeText = false,
   children,
   wide = true,
 }: {
   motion: MotionProfile;
   largeTargets: boolean;
+  largeText?: boolean;
   children: React.ReactNode;
   wide?: boolean;
 }) {
   return (
-    <StudyRoot motion={motion} largeTargets={largeTargets}>
+    <StudyRoot motion={motion} largeTargets={largeTargets} largeText={largeText}>
       <Navbar />
       <main className={cn("flex-1 w-full mx-auto px-6 py-10 md:py-16 flex flex-col gap-12", wide ? "max-w-6xl" : "max-w-3xl")}>{children}</main>
       <Footer />
@@ -79,6 +96,8 @@ export function StudyPage({
 export function SessionFrame({
   motion,
   largeTargets,
+  largeText = false,
+  tapHold = false,
   backHref,
   backLabel = "My study",
   aside,
@@ -86,13 +105,15 @@ export function SessionFrame({
 }: {
   motion: MotionProfile;
   largeTargets: boolean;
+  largeText?: boolean;
+  tapHold?: boolean;
   backHref: string;
   backLabel?: string;
   aside?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
-    <StudyRoot motion={motion} largeTargets={largeTargets}>
+    <StudyRoot motion={motion} largeTargets={largeTargets} largeText={largeText} tapHold={tapHold}>
       <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl">
         <div className="max-w-3xl mx-auto px-6 h-[64px] flex items-center justify-between gap-4">
           <Link href={backHref} className="inline-flex items-center gap-2 text-[15px] font-medium text-muted-foreground hover:text-foreground rounded-full px-2 -ml-2 py-1.5">

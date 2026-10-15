@@ -5,6 +5,7 @@ import { ArrowDown, ArrowUp, Check, Lock } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { games, mulberry32, shuffle } from "@/lib/study";
+import { stepVisuals, visualUrl } from "@/lib/visuals";
 import type { Concept } from "@/content/types";
 import type { GameProps } from "./types";
 
@@ -103,6 +104,9 @@ export default function OrderGame(props: GameProps) {
 
   const items = concept.order.items;
   const n = items.length;
+  // A storyboard: every step pictured, or none, so the strip reads as one sequence.
+  const frames = props.pictures ? stepVisuals(concept) : [];
+  const storyboard = frames.length === n && frames.every(Boolean);
   const lo = preplaced && n > 1 ? 1 : 0; // first movable slot
   const live = round.status === "arranging" || round.status === "retry";
   const done = !live;
@@ -180,7 +184,7 @@ export default function OrderGame(props: GameProps) {
   const roundsCorrect = results.filter((r) => r.correct).length;
 
   return (
-    <div data-testid="game-order" data-motion={props.motion} className="flex flex-col gap-5">
+    <div data-testid="game-order" data-motion={props.motion} data-storyboard={storyboard} className="flex flex-col gap-5">
       {/* Keyed by round so every row and the prompt re-enter on a new round. */}
       <div key={round.index} className="flex flex-col gap-5">
         <div className="m-enter flex flex-col gap-2">
@@ -227,6 +231,7 @@ export default function OrderGame(props: GameProps) {
                 <button
                   type="button"
                   aria-pressed={selected}
+                  data-say={items[step]}
                   disabled={!canSelect}
                   onClick={() => select(i)}
                   className={cn(
@@ -246,6 +251,18 @@ export default function OrderGame(props: GameProps) {
                     {i + 1}
                   </span>
                   <span className="sr-only">Position {i + 1}:</span>
+                  {storyboard && frames[step] && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={visualUrl(frames[step]!.src)}
+                      alt=""
+                      width={frames[step]!.w}
+                      height={frames[step]!.h}
+                      draggable={false}
+                      data-testid="order-frame"
+                      className={cn("shrink-0 rounded-xl bg-muted object-cover", largeTargets ? "size-20" : "size-16")}
+                    />
+                  )}
                   <span id={textId} className={cn("min-w-0 flex-1 font-medium leading-snug", locked && !right && "text-muted-foreground")}>
                     {items[step]}
                   </span>

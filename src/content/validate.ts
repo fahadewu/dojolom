@@ -3,11 +3,12 @@
 // an unbalanced true/false set is caught before it can teach something false.
 
 import { subjects } from "@/lib/learning";
-import type { Concept, Question, UnitContent } from "./types";
+import type { Concept, CreativeQuestion, Question, UnitContent } from "./types";
 
 const words = (s: string) => s.trim().split(/\s+/).filter(Boolean).length;
 const sentences = (s: string) => s.split(/(?<=[.!?])\s+/).filter((x) => x.trim().length > 0);
 const PLACEHOLDER = /\b(todo|tbd|lorem|ipsum|placeholder|fixme)\b|\[[^\]]*\]/i;
+const BANGLA = /[\u0980-\u09FF]/;
 
 /** Every string value inside a concept, so structural brackets from arrays are never mistaken for placeholders. */
 function strings(value: unknown, out: string[] = []): string[] {
@@ -70,6 +71,21 @@ export function validateConcept(c: Concept, subject: string, unit: number, n: nu
   if (!Array.isArray(c.keyPoints) || c.keyPoints.length !== 3) e.push(`${at}: needs exactly 3 keyPoints`);
   else c.keyPoints.forEach((k, i) => { if (!k.trim() || words(k) > 30) e.push(`${at}: keyPoint ${i + 1} empty or over 30 words`); });
   if (!c.misconception?.belief?.trim() || !c.misconception?.correction?.trim()) e.push(`${at}: misconception needs belief and correction`);
+  if (c.terms !== undefined) {
+    if (!Array.isArray(c.terms) || c.terms.length < 2 || c.terms.length > 8) e.push(`${at}: terms, when given, needs 2 to 8 entries`);
+    else {
+      if (new Set(c.terms.map((t) => t.trim().toLowerCase())).size !== c.terms.length) e.push(`${at}: terms must be unique`);
+      c.terms.forEach((t, i) => { if (!t.trim() || words(t) > 3) e.push(`${at}: term ${i + 1} empty or over 3 words`); });
+    }
+  }
+  if (c.sayPrompt !== undefined && (!c.sayPrompt.trim() || words(c.sayPrompt) > 30)) e.push(`${at}: sayPrompt empty or over 30 words`);
+  if (c.glossary !== undefined) {
+    if (!Array.isArray(c.glossary) || c.glossary.length < 2 || c.glossary.length > 8) e.push(`${at}: glossary, when given, needs 2 to 8 entries`);
+    else c.glossary.forEach((g, i) => {
+      if (!g.term?.trim() || words(g.term) > 4) e.push(`${at}: glossary ${i + 1} term empty or over 4 words`);
+      if (!g.bn?.trim() || !BANGLA.test(g.bn)) e.push(`${at}: glossary ${i + 1} needs the Bangla term in Bangla script`);
+    });
+  }
 
   if (!Array.isArray(c.quiz) || c.quiz.length !== 3) e.push(`${at}: needs exactly 3 quiz questions`);
   else c.quiz.forEach((q, i) => checkQuestion(q, `${at} quiz ${i + 1}`, e));
@@ -119,6 +135,19 @@ export function validateConcept(c: Concept, subject: string, unit: number, n: nu
   return e;
 }
 
+function validateCq(cq: CreativeQuestion, at: string): string[] {
+  const e: string[] = [];
+  const n = sentences(cq.stem ?? "").length;
+  if (!cq.stem?.trim() || n < 2 || n > 6 || words(cq.stem) > 130) e.push(`${at} cq: stem needs 2 to 6 sentences, at most 130 words`);
+  const parts: [keyof CreativeQuestion, number][] = [["knowledge", 25], ["comprehension", 35], ["application", 45], ["higherOrder", 45]];
+  for (const [k, maxQ] of parts) {
+    const p = cq[k] as { q?: string; a?: string } | undefined;
+    if (!p?.q?.trim() || words(p.q) > maxQ) e.push(`${at} cq: ${k} question empty or over ${maxQ} words`);
+    if (!p?.a?.trim() || words(p.a) > 160) e.push(`${at} cq: ${k} answer empty or over 160 words`);
+  }
+  return e;
+}
+
 export function validateUnit(u: UnitContent): string[] {
   const e: string[] = [];
   const subject = subjects.find((s) => s.id === u.subject);
@@ -131,5 +160,12 @@ export function validateUnit(u: UnitContent): string[] {
   u.concepts.forEach((c, i) => e.push(...validateConcept(c, u.subject, u.unit, i + 1)));
   const titles = new Set(u.concepts.map((c) => c.title.trim().toLowerCase()));
   if (titles.size !== 3) e.push(`${u.subject}-${u.unit}: concept titles must differ`);
+  if (subject.curriculum) {
+    // A curriculum chapter is taught with its Bangla terms and practised in the board's own question format.
+    if (!u.titleBn?.trim() || !BANGLA.test(u.titleBn)) e.push(`${u.subject}-${u.unit}: titleBn needs the chapter title in Bangla`);
+    if (!u.cq) e.push(`${u.subject}-${u.unit}: needs a creative question (cq)`);
+    u.concepts.forEach((c, i) => { if (!c.glossary) e.push(`${u.subject}-${u.unit}-${i + 1}: needs a glossary of Bangla terms`); });
+  }
+  if (u.cq) e.push(...validateCq(u.cq, `${u.subject}-${u.unit}`));
   return e;
 }

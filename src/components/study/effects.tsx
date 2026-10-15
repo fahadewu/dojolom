@@ -112,7 +112,9 @@ export function CountUp({ value, motion, duration = 700, className }: { value: n
   return <span className={cn("tabular-nums", className)}>{animate ? shown : value}</span>;
 }
 
-export function StreakFlame({ count, active, rest = false, motion, className }: { count: number; active: boolean; rest?: boolean; motion: MotionProfile; className?: string }) {
+/* A broken streak is never shown as a loss: someone who has studied before and is back at zero is offered a fresh start
+   (comebacks, not lost counts, keep people going: Silverman & Barasch 2023; Dai, Milkman & Riis 2014). */
+export function StreakFlame({ count, active, rest = false, returning = false, motion, className }: { count: number; active: boolean; rest?: boolean; returning?: boolean; motion: MotionProfile; className?: string }) {
   return (
     <span
       data-testid="streak"
@@ -123,7 +125,7 @@ export function StreakFlame({ count, active, rest = false, motion, className }: 
       )}
     >
       <Fire size={16} weight={active ? "fill" : "duotone"} className={cn(active && motion === "lively" && "m-pulse")} />
-      {count === 0 ? "Start a streak" : `${count} day streak`}
+      {count === 0 ? (returning ? "Fresh start today" : "Start a streak") : `${count} day streak`}
       {rest && <span className="text-muted-foreground font-medium">· rest day used</span>}
     </span>
   );

@@ -3,40 +3,65 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Lightbulb, Pause, Play, Sparkle, Warning } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
+import { useTuning } from "@/components/study/tuning";
 import { ChoiceQuestion } from "@/components/study/question-card";
 import { cn } from "@/lib/utils";
 import { tint, tintOrder } from "@/lib/tint";
-import { formatLabel, type LearnFormat, type Segment } from "@/lib/study";
+import { formatLabel, type Confidence, type LearnFormat, type ReadSample, type Segment } from "@/lib/study";
+import { SayBack, type SayResult } from "@/components/study/segments/say-back";
+import { Listen, Spoken, useReadAloud, type Chunk } from "@/components/study/read-aloud";
+import { visualFor, visualUrl } from "@/lib/visuals";
 import type { Concept } from "@/content/types";
 
 type LearnSeg = Extract<Segment, { kind: "learn" }>;
 
-/* Today's idea, presented in the format the engine chose. The teaching moves
-   (guess first, see the steps, meet the misconception, say the key points)
-   happen in every format; only the wrapper changes. */
+/* Today's idea, presented in the format the engine chose, inside a fixed loop
+   of doing: Guess (the misconception, true or false), Try (a go at the example
+   before it is explained), See (the format body, then the misconception named
+   and corrected), Say (the idea said back before the key points appear). Only
+   the See wrapper changes with the format. */
 export function LearnSegment({
   segment,
   concept,
+  seed,
   largeTargets,
   isKid,
+  confidence,
   pretestAnswer,
+  said,
+  pictures = false,
   onPretest,
+  onTry,
+  onSay,
   onSwitch,
   onAnswer,
   onDone,
 }: {
   segment: LearnSeg;
   concept: Concept;
+  seed: number;
   largeTargets: boolean;
   isKid: boolean;
+  confidence: boolean;
+  pictures?: boolean;      // show the idea's illustration when one exists
   pretestAnswer?: boolean; // what the learner guessed, kept by the session so a format switch does not lose it
+  said?: string;           // what they said last time, if they are replaying
   onPretest: (saidTrue: boolean) => void;
+  onTry: (correct: boolean, confidence: Confidence, read?: ReadSample) => void;  // the go at the example before the explanation
+  onSay: (result: SayResult) => void;                         // the teach-back
   onSwitch: (() => void) | null; // null once the learner has already switched this sitting
   onAnswer: (correct: boolean) => void; // the "try it" example inside the challenge format
   onDone: () => void;
 }) {
-  const [phase, setPhase] = useState<"pretest" | "learn">(segment.pretest ? "pretest" : "learn");
+  const [phase, setPhase] = useState<"pretest" | "try" | "learn">(segment.pretest ? "pretest" : segment.tryFirst ? "try" : "learn");
+  const [tried, setTried] = useState(false);
+  const [saidDone, setSaidDone] = useState(segment.sayBack === "none");
+  const [deeper, setDeeper] = useState(false);
+  const { goDeeper } = useTuning();
+  const { on: readOn, autoQuestions } = useReadAloud();
+  useEffect(() => { window.scrollTo({ top: 0 }); }, [phase]); // guess, try and lesson each open at their top
   const saidTrue = pretestAnswer ?? null;
+  const scene = pictures ? visualFor(concept.id, "scene") : null;
 
   if (phase === "pretest") {
     return (
@@ -44,7 +69,8 @@ export function LearnSegment({
         <Kicker>Before we start</Kicker>
         <h1 className="text-[2rem] md:text-[2.5rem] font-semibold leading-[1.1]">True or false?</h1>
         <div className="surface rounded-[28px] p-6 md:p-8 flex flex-col gap-6">
-          <p className="font-display text-2xl font-semibold leading-snug">{concept.misconception.belief}</p>
+          <p className="font-display text-2xl font-semibold leading-snug"><Spoken k="belief" text={concept.misconception.belief} /></p>
+          <Listen auto={autoQuestions} chunks={() => [{ key: "belief", text: concept.misconception.belief }]} />
           <p className="text-[15px] text-muted-foreground">A guess is fine. Guessing first makes the idea stick better, even when the guess is wrong.</p>
           <div className="flex gap-3">
             {[true, false].map((v) => (
@@ -54,13 +80,44 @@ export function LearnSegment({
                 variant="outline"
                 className={cn("tap flex-1 text-base", largeTargets && "h-16 text-lg")}
                 data-testid={v ? "pretest-true" : "pretest-false"}
-                onClick={() => { onPretest(v); setPhase("learn"); }}
+                // A wrong guess means the idea is new: explain it first rather than ask them to try (docs/age-learning-rd.md).
+                onClick={() => { onPretest(v); setPhase(segment.tryFirst && !v ? "try" : "learn"); }}
               >
                 {v ? "True" : "False"}
               </Button>
             ))}
           </div>
         </div>
+      </section>
+    );
+  }
+
+  if (phase === "try") {
+    return (
+      <section data-testid="segment-learn" data-phase="try" className="flex flex-col gap-6 m-enter">
+        <Kicker>Have a go first</Kicker>
+        <h1 className="text-[2rem] md:text-[2.5rem] font-semibold leading-[1.1]">Try it before we explain</h1>
+        <div className="surface rounded-[28px] p-6 md:p-8">
+          <ChoiceQuestion
+            kicker={<p className="text-[15px] text-muted-foreground">Wrong is fine. A guess now is what makes the explanation land.</p>}
+            prompt={concept.example.question}
+            options={concept.example.options}
+            answer={concept.example.answer}
+            why={concept.example.why}
+            seed={seed}
+            confidence={confidence}
+            largeTargets={largeTargets}
+            onAnswer={(c, conf, meta) => { setTried(true); onTry(c, conf, meta?.read); }}
+          />
+        </div>
+        {tried && (
+          <div className="flex justify-end">
+            <Button size="lg" onClick={() => setPhase("learn")} data-testid="try-continue">
+              See how it works
+              <ArrowRight size={18} weight="bold" />
+            </Button>
+          </div>
+        )}
       </section>
     );
   }
@@ -75,12 +132,58 @@ export function LearnSegment({
               <Sparkle size={14} weight="fill" /> Trying something new
             </span>
           )}
+          {segment.corrective && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-sun-soft text-sun-deep px-3 py-1 text-sm font-semibold" data-testid="corrective">
+              <Sparkle size={14} weight="fill" /> Second look, a different way in
+            </span>
+          )}
         </div>
         <h1 className="text-[2rem] md:text-[2.5rem] font-semibold leading-[1.1]">{concept.title}</h1>
-        <p className="lede">{concept.hook}</p>
+        <p className="lede"><Spoken k="hook" text={concept.hook} /></p>
+        <Listen auto={readOn} label="Read it to me" chunks={() => lessonChunks(concept, segment.format, segment.compact)} />
+        {/* Curriculum lessons: the key words with the Bangla term from the Bangla-medium book, before the idea uses them. */}
+        {concept.glossary && (
+          <div className="flex flex-col gap-2" data-testid="glossary">
+            <p className="text-sm font-semibold text-muted-foreground">Key words <span lang="bn">· মূল শব্দ</span></p>
+            <ul className="flex flex-wrap gap-2">
+              {concept.glossary.map((g) => (
+                <li key={g.term} className="rounded-full bg-card px-3 py-1.5 text-sm font-semibold shadow-[var(--shadow-hairline)]">
+                  {g.term} <span className="font-medium text-muted-foreground" lang="bn">· {g.bn}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
+      {/* The idea pictured, when a generated illustration exists for it. Alt text is the authored hook, never model output. */}
+      {scene && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={visualUrl(scene.src)}
+          alt={scene.alt}
+          width={scene.w}
+          height={scene.h}
+          data-testid="scene-visual"
+          className="m-enter aspect-[2/1] w-full rounded-[24px] bg-muted object-cover shadow-[var(--shadow-hairline)]"
+        />
+      )}
+
       <FormatBody format={segment.format} concept={concept} compact={segment.compact} isKid={isKid} onAnswer={onAnswer} />
+
+      {/* For the curious: the precise explanation, one tap away in every format that is not already the deep read. */}
+      {goDeeper && segment.format !== "reading" && !isKid && (
+        deeper ? (
+          <div className="surface rounded-[24px] p-6 md:p-8 flex flex-col gap-4 m-enter" data-testid="go-deeper-text">
+            <p className="text-sm font-semibold text-muted-foreground">The deeper version</p>
+            {concept.deepRead.map((p, i) => <p key={i} className="text-[16px] leading-8">{p}</p>)}
+          </div>
+        ) : (
+          <button type="button" onClick={() => setDeeper(true)} className="self-start text-[15px] font-semibold text-focus hover:underline underline-offset-4" data-testid="go-deeper">
+            Go deeper: why it works
+          </button>
+        )
+      )}
 
       {/* Refutation: the misconception, named and corrected. */}
       <div className="rounded-[24px] bg-sun-soft/70 p-6 flex gap-4" data-testid="misconception">
@@ -88,9 +191,9 @@ export function LearnSegment({
         <div className="flex flex-col gap-2 text-[15px] leading-7">
           <p>
             <span className="font-semibold">Many people think: </span>
-            <span className="italic">“{concept.misconception.belief}”</span>
+            <span className="italic">“<Spoken k="mis-belief" text={concept.misconception.belief} />”</span>
           </p>
-          <p>{concept.misconception.correction}</p>
+          <p><Spoken k="mis-fix" text={concept.misconception.correction} /></p>
           {saidTrue !== null && (
             <p className="text-sm font-semibold text-sun-deep">
               {saidTrue ? "You said true earlier. This is the catch." : "You already had this right."}
@@ -99,29 +202,64 @@ export function LearnSegment({
         </div>
       </div>
 
-      <div className="surface rounded-[24px] p-6 flex flex-col gap-3" data-testid="key-points">
-        <p className="text-sm font-semibold text-muted-foreground">Three things to remember</p>
-        <ol className="flex flex-col gap-2.5">
-          {concept.keyPoints.map((k, i) => (
-            <li key={i} className="flex gap-3 text-[16px] leading-7">
-              <span className="font-display text-sprout font-semibold tabular-nums">{i + 1}</span>
-              {k}
-            </li>
-          ))}
-        </ol>
-      </div>
+      {/* Say it back: produce the idea before the key points are shown, then compare. */}
+      {segment.sayBack !== "none" && (
+        <SayBack
+          mode={segment.sayBack}
+          concept={concept}
+          seed={seed}
+          largeTargets={largeTargets}
+          initialText={said ?? ""}
+          onDone={(r) => { onSay(r); setSaidDone(true); }}
+        />
+      )}
+
+      {saidDone && (
+        <div className="surface rounded-[24px] p-6 flex flex-col gap-3 m-enter" data-testid="key-points">
+          <p className="text-sm font-semibold text-muted-foreground">{segment.sayBack === "none" ? "Three things to remember" : "Compare with ours: three things to remember"}</p>
+          <ol className="flex flex-col gap-2.5">
+            {concept.keyPoints.map((k, i) => (
+              <li key={i} className="flex gap-3 text-[16px] leading-7">
+                <span className="font-display text-sprout font-semibold tabular-nums">{i + 1}</span>
+                {k}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border">
         <Button variant="ghost" onClick={onSwitch ?? undefined} disabled={!onSwitch} className="mt-4 -ml-3" data-testid="another-way">
           Show me another way
         </Button>
-        <Button size="lg" onClick={onDone} className="mt-4" data-testid="learn-done">
-          Got it
-          <ArrowRight size={18} weight="bold" />
-        </Button>
+        {saidDone && (
+          <Button size="lg" onClick={onDone} className="mt-4" data-testid="learn-done">
+            Got it
+            <ArrowRight size={18} weight="bold" />
+          </Button>
+        )}
       </div>
     </section>
   );
+}
+
+/* What "Read it to me" reads: the lesson as this format shows it, then the misconception and its correction.
+   Keys match the Spoken wrappers below, so the sentence being read lights up where it is shown. */
+function lessonChunks(concept: Concept, format: LearnFormat, compact: boolean): Chunk[] {
+  const steps = concept.steps.flatMap((st, i) => [{ key: `step-label-${i}`, text: st.label }, { key: `step-${i}`, text: st.text }]);
+  const analogy = { key: "analogy", text: concept.analogy };
+  const body: Chunk[] =
+    format === "story" ? [...concept.story.map((p, i) => ({ key: `story-${i}`, text: p })), ...(compact ? [] : steps), analogy]
+      : format === "reading" ? [...concept.deepRead.map((p, i) => ({ key: `deep-${i}`, text: p })), ...steps]
+        : format === "challenge" ? []
+          : [...steps, analogy];
+  return [
+    { key: "hook", text: concept.hook },
+    ...body,
+    { key: "mis-intro", text: "Many people think:" },
+    { key: "mis-belief", text: concept.misconception.belief },
+    { key: "mis-fix", text: concept.misconception.correction },
+  ];
 }
 
 export function Kicker({ children, className }: { children: React.ReactNode; className?: string }) {
@@ -156,8 +294,8 @@ export function StepsGrid({ concept, className }: { concept: Concept; className?
           <li key={i} className={cn("rounded-2xl p-4 md:p-5 flex gap-4 m-enter", t.soft)} style={{ "--m-delay": `${i * 70}ms` } as React.CSSProperties}>
             <span className={cn("font-display text-2xl font-semibold leading-none tabular-nums", t.text)}>{i + 1}</span>
             <div>
-              <p className="text-[15px] font-semibold leading-snug">{st.label}</p>
-              <p className="text-[15px] text-ink/75 leading-7 mt-1">{st.text}</p>
+              <p className="text-[15px] font-semibold leading-snug"><Spoken k={`step-label-${i}`} text={st.label} /></p>
+              <p className="text-[15px] text-ink/75 leading-7 mt-1"><Spoken k={`step-${i}`} text={st.text} /></p>
             </div>
           </li>
         );
@@ -172,7 +310,7 @@ function Analogy({ text }: { text: string }) {
       <Lightbulb size={22} weight="duotone" className="shrink-0 text-sun-deep mt-0.5" />
       <p className="text-[15px] leading-7">
         <span className="font-semibold">Picture it. </span>
-        {text}
+        <Spoken k="analogy" text={text} />
       </p>
     </div>
   );
@@ -218,12 +356,12 @@ function Walkthrough({ concept }: { concept: Concept }) {
         {step ? (
           <>
             <p className={cn("font-display text-sm font-semibold", t.text === "text-sun-deep" ? "text-sun" : t.text.replace("text-", "text-"))}>{step.label}</p>
-            <p className="font-display text-2xl md:text-[2rem] font-semibold leading-[1.2]">{step.text}</p>
+            <p className="font-display text-2xl md:text-[2rem] font-semibold leading-[1.2]"><Spoken k={`step-${i}`} text={step.text} /></p>
           </>
         ) : (
           <>
             <p className="font-display text-sm font-semibold text-sun">Picture it</p>
-            <p className="font-display text-2xl md:text-[2rem] font-semibold leading-[1.2]">{concept.analogy}</p>
+            <p className="font-display text-2xl md:text-[2rem] font-semibold leading-[1.2]"><Spoken k="analogy" text={concept.analogy} /></p>
           </>
         )}
       </div>
@@ -246,7 +384,7 @@ function Story({ concept, compact }: { concept: Concept; compact: boolean }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="rounded-[28px] bg-sun-soft/60 p-6 md:p-8 prose-tight text-[17px] leading-8" data-testid="story">
-        {concept.story.map((p, i) => <p key={i}>{p}</p>)}
+        {concept.story.map((p, i) => <p key={i}><Spoken k={`story-${i}`} text={p} /></p>)}
       </div>
       {!compact && <StepsGrid concept={concept} />}
       <Analogy text={concept.analogy} />
@@ -255,12 +393,13 @@ function Story({ concept, compact }: { concept: Concept; compact: boolean }) {
 }
 
 function DeepRead({ concept, isKid }: { concept: Concept; isKid: boolean }) {
-  // Kids never get the long read: they see the story instead, which the engine already prefers.
+  // Pre-readers never get the long read (the engine rules it out); a corrective that lands here shows the story instead.
   const paragraphs = isKid ? concept.story : concept.deepRead;
+  const k = isKid ? "story" : "deep";
   return (
     <div className="flex flex-col gap-4">
       <div className="surface rounded-[28px] p-6 md:p-8 prose-tight text-[16px] leading-8 max-w-prose" data-testid="deep-read">
-        {paragraphs.map((p, i) => <p key={i}>{p}</p>)}
+        {paragraphs.map((p, i) => <p key={i}><Spoken k={`${k}-${i}`} text={p} /></p>)}
       </div>
       <StepsGrid concept={concept} />
     </div>

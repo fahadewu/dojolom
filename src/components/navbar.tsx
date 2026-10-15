@@ -9,6 +9,7 @@ import { Logo } from "@/components/logo";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
+  { href: "/#books", label: "School books" },
   { href: "/#subjects", label: "Subjects" },
   { href: "/#how", label: "How it works" },
   { href: "/#try", label: "Try a lesson" },
@@ -36,7 +37,8 @@ export function Navbar() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
-  const isActive = (href: string) => !href.includes("#") && pathname === href;
+  const strip = (p: string) => p.replace(/\/+$/, "") || "/";
+  const isActive = (href: string) => !href.includes("#") && strip(pathname ?? "") === strip(href);
 
   return (
     <header
@@ -48,7 +50,7 @@ export function Navbar() {
       <div className="max-w-6xl mx-auto px-6 h-[68px] flex items-center justify-between gap-6">
         <Logo />
 
-        <nav className="hidden md:flex items-center gap-1" aria-label="Main">
+        <nav className="hidden lg:flex items-center gap-1" aria-label="Main">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -67,7 +69,7 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Button size="sm" className="hidden md:inline-flex h-10 px-4" asChild>
+          <Button size="sm" className="hidden lg:inline-flex h-10 px-4" asChild>
             <Link href="/start">
               Start learning
               <ArrowRight size={14} weight="bold" />
@@ -75,7 +77,7 @@ export function Navbar() {
           </Button>
 
           <button
-            className="md:hidden size-10 inline-flex items-center justify-center rounded-full text-foreground hover:bg-muted transition-colors"
+            className="lg:hidden size-10 inline-flex items-center justify-center rounded-full text-foreground hover:bg-muted transition-colors"
             aria-label={open ? "Close menu" : "Open menu"}
             aria-expanded={open}
             aria-controls="mobile-menu"
@@ -87,7 +89,7 @@ export function Navbar() {
       </div>
 
       {open && (
-        <div id="mobile-menu" className="md:hidden bg-background border-t border-border/80 animate-in fade-in slide-in-from-top-1 duration-200">
+        <div id="mobile-menu" className="lg:hidden bg-background border-t border-border/80 animate-in fade-in slide-in-from-top-1 duration-200">
           <nav className="max-w-6xl mx-auto px-6 py-3 flex flex-col" aria-label="Main">
             {navLinks.map((link) => (
               <Link

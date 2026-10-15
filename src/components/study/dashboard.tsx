@@ -7,10 +7,12 @@ import { ArrowRight, ArrowCounterClockwise, Clock, GearSix, LockSimple, Plant } 
 import { Button } from "@/components/ui/button";
 import { SubjectChip } from "@/components/subject-icon";
 import { ClientGate, StudyPage, StudySkeleton } from "@/components/study/shell";
+import { ageView } from "@/lib/age";
 import { ProgressRing, StreakFlame } from "@/components/study/effects";
 import { useLearner, useNow, useReducedMotion, useStudy } from "@/lib/study-store";
 import { authoredUnitsFor, useConcepts } from "@/content/load";
 import { cn } from "@/lib/utils";
+import { planLine } from "@/components/study/plan";
 import { tint } from "@/lib/tint";
 import { subjectTint } from "@/components/subject-icon";
 import {
@@ -24,9 +26,11 @@ import {
   securedCount,
   streak,
   subjectById,
+  tuningOf,
   subjectPercent,
   type DayStatus,
   type SubjectPlan,
+  reconcilePlan,
 } from "@/lib/study";
 
 export function StudyDashboard() {
@@ -45,7 +49,7 @@ function greeting(hour: number, name: string) {
 function Dashboard() {
   const router = useRouter();
   const bundle = useLearner();
-  const [state] = useStudy();
+  const [state, update] = useStudy();
   const now = useNow();
   const reduced = useReducedMotion();
   useEffect(() => { if (bundle === null) router.replace("/start/"); }, [bundle, router]);
@@ -55,6 +59,7 @@ function Dashboard() {
     () => (learner?.subjects ?? []).map((s) => buildPlan(s, learner?.pace ?? "", authoredUnitsFor(s))),
     [learner?.subjects, learner?.pace],
   );
+  useEffect(() => { update((s) => plans.reduce((acc, plan) => reconcilePlan(acc, plan), s)); }, [plans, update]);
   const today = effectiveToday(state, now);
   const rows = plans.map((plan) => ({ plan, status: dayStatus(plan, state.subjects[plan.subject], today) }));
   const primary = rows.find((r) => r.status.kind === "in-progress") ?? rows.find((r) => r.status.kind === "ready" || r.status.kind === "not-started");
@@ -66,15 +71,17 @@ function Dashboard() {
   if (!bundle || !learner) return <StudySkeleton />;
   const { profile } = bundle;
   const motion = motionFor(learner, profile, state.motion, reduced);
-  const largeTargets = learner.age === "kid" || learner.age === "senior";
+  const age = ageView(learner, state);
   const streakInfo = streak(state.sessions, today);
   const due = dueAcross(state, plans, today);
   const deep = (learner.pace || "steady") === "deep";
   const firstName = learner.name.trim().split(" ")[0];
   const everStudied = state.sessions.length > 0;
+  const tuning = tuningOf(learner, state, today);
+  const plan = planLine(state.cue, state.when);
 
   return (
-    <StudyPage motion={motion} largeTargets={largeTargets}>
+    <StudyPage motion={motion} largeTargets={age.largeTargets} largeText={age.largeText}>
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="flex flex-col gap-3">
           <p className="text-sm font-semibold text-muted-foreground">My study</p>
@@ -85,16 +92,22 @@ function Dashboard() {
               : primary
                 ? "Today's session is ready when you are."
                 : "Today's sessions are done. Tomorrow's rewind will check what stuck."}
-            {state.when && <span className="block text-[15px] mt-1">Your plan: {state.when}s.</span>}
+            {plan && <span className="block text-[15px] mt-1">Your plan: {plan}</span>}
+            {tuning.startSmall && primary && (
+              <span className="block text-[15px] mt-2 font-semibold text-foreground" data-testid="start-small">
+                Start small today: open the session and do just the rewind. Two minutes is enough to pick the thread back up, and you can stop after it.
+              </span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {deep ? (
+          {/* Under 8: sessions this week, never a day-streak count (no streak pressure on young children). */}
+          {deep || !age.d.streakCount ? (
             <span className="inline-flex items-center gap-2 rounded-full bg-sun-soft text-sun-deep px-3.5 py-1.5 text-sm font-semibold" data-testid="streak">
               {streakInfo.thisWeek} {streakInfo.thisWeek === 1 ? "session" : "sessions"} this week
             </span>
           ) : (
-            <StreakFlame count={streakInfo.current} active={streakInfo.activeToday} rest={streakInfo.restUsed} motion={motion} />
+            <StreakFlame count={streakInfo.current} active={streakInfo.activeToday} rest={streakInfo.restUsed} returning={streakInfo.best > 0} motion={motion} />
           )}
           <Button variant="outline" size="icon" asChild aria-label="Study settings">
             <Link href="/study/settings/"><GearSix size={18} weight="bold" /></Link>
